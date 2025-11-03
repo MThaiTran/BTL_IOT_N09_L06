@@ -1,7 +1,8 @@
-import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { devicesAPI } from '../services/api';
-import { Device } from '../types';
+import { Device, UserRole } from '../types';
+import { getCurrentUserRole } from '../utils/roles';
 import TemperatureHumidityCard from '../components/dashboard/TemperatureHumidityCard';
 import DeviceControlCard from '../components/dashboard/DeviceControlCard';
 import SystemStatusCard from '../components/dashboard/SystemStatusCard';
@@ -9,6 +10,11 @@ import ActivityChart from '../components/dashboard/ActivityChart';
 import { Zap, Wind } from 'lucide-react';
 
 function DashboardPage() {
+    // Redirect admin to admin dashboard
+    const userRole = getCurrentUserRole();
+    if (userRole === UserRole.ADMIN) {
+        return <Navigate to="/admin/dashboard" replace />;
+    }
     const { data: devices, isLoading } = useQuery({
         queryKey: ['devices'],
         queryFn: () => devicesAPI.getAll().then((res) => res.data),
@@ -72,7 +78,6 @@ function DashboardPage() {
                     title="Điều khiển Đèn"
                     icon={Zap}
                     devices={lightDevices}
-                    deviceType="light"
                 />
 
                 {/* Fan Control */}
@@ -80,7 +85,6 @@ function DashboardPage() {
                     title="Điều khiển Quạt"
                     icon={Wind}
                     devices={fanDevices}
-                    deviceType="fan"
                 />
             </div>
 

@@ -7,11 +7,74 @@ import type {
   UpdateDeviceDto,
   LoginDto,
   SignupDto,
+  User,
+  Role,
+  CreateUserDto,
+  UpdateUserDto,
 } from '../types';
-import { EDeviceLog } from '../types';
+import { EDeviceLog, UserRole, ERole } from '../types';
 
 // Mock delay to simulate network request
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Mock Roles
+const mockRoles: Role[] = [
+  {
+    id: UserRole.ADMIN,
+    name: ERole.ADMIN,
+    description: 'Quản trị viên - Quyền truy cập đầy đủ',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  },
+  {
+    id: UserRole.TECHNICIAN,
+    name: ERole.TECHNICIAN,
+    description: 'Kỹ thuật viên - Quản lý thiết bị và hệ thống',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  },
+  {
+    id: UserRole.ENDUSER,
+    name: ERole.ENDUSER,
+    description: 'Chủ nhà - Quản lý thiết bị của mình',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  },
+];
+
+// Mock Users - stored in memory
+let mockUsers: User[] = [
+  {
+    id: 1,
+    email: 'admin@test.com',
+    name: 'Admin User',
+    status: 'active',
+    roleId: UserRole.ADMIN,
+    role: mockRoles[0],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  },
+  {
+    id: 2,
+    email: 'owner@test.com',
+    name: 'House Owner',
+    status: 'active',
+    roleId: UserRole.ENDUSER,
+    role: mockRoles[2],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  },
+  {
+    id: 3,
+    email: 'tech@test.com',
+    name: 'Technician',
+    status: 'active',
+    roleId: UserRole.TECHNICIAN,
+    role: mockRoles[1],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  },
+];
 
 // Mock Device Types
 const mockDeviceTypes: DeviceType[] = [
@@ -166,15 +229,24 @@ export const mockAuthAPI = {
   signin: async (data: LoginDto): Promise<{ data: AuthResponse }> => {
     await delay(800);
 
-    // Mock validation
-    if (data.email === 'user@test.com' && data.password === 'password123') {
+    // Mock validation with multiple users
+    const mockCredentials: Record<string, { user: User; password: string }> = {
+      'admin@test.com': { user: mockUsers[0], password: 'admin123' },
+      'owner@test.com': { user: mockUsers[1], password: 'owner123' },
+      'tech@test.com': { user: mockUsers[2], password: 'tech123' },
+      'user@test.com': { user: mockUsers[1], password: 'password123' }, // Legacy support
+    };
+
+    const credential = mockCredentials[data.email];
+
+    if (credential && credential.password === data.password) {
       const response: AuthResponse = {
         payload: {
-          id: 1,
-          email: 'user@test.com',
-          name: 'Test User',
-          status: 'active',
-          roleId: 1,
+          id: credential.user.id,
+          email: credential.user.email,
+          name: credential.user.name,
+          status: credential.user.status,
+          roleId: credential.user.roleId,
         },
         token: 'mock-jwt-token-' + Date.now(),
       };
@@ -334,6 +406,87 @@ export const mockSystemLogsAPI = {
       throw { response: { status: 404, data: { message: 'Log not found' } } };
     }
     return { data: log };
+  },
+};
+
+// Mock Users API
+export const mockUsersAPI = {
+  getAll: async (): Promise<{ data: User[] }> => {
+    await delay(600);
+    return { data: [...mockUsers] };
+  },
+
+  getOne: async (id: number): Promise<{ data: User }> => {
+    await delay(400);
+    const user = mockUsers.find((u) => u.id === id);
+    if (!user) {
+      throw { response: { status: 404, data: { message: 'User not found' } } };
+    }
+    return { data: user };
+  },
+
+  create: async (data: CreateUserDto): Promise<{ data: User }> => {
+    await delay(800);
+    const role = mockRoles.find((r) => r.id === data.roleId);
+    const newUser: User = {
+      id: Math.max(...mockUsers.map((u) => u.id), 0) + 1,
+      email: data.email,
+      name: data.name,
+      status: 'active',
+      roleId: data.roleId,
+      role,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    mockUsers.push(newUser);
+    return { data: newUser };
+  },
+
+  update: async (id: number, data: UpdateUserDto): Promise<{ data: User }> => {
+    await delay(700);
+    const index = mockUsers.findIndex((u) => u.id === id);
+    if (index === -1) {
+      throw { response: { status: 404, data: { message: 'User not found' } } };
+    }
+    const role = data.roleId ? mockRoles.find((r) => r.id === data.roleId) : mockUsers[index].role;
+    mockUsers[index] = {
+      ...mockUsers[index],
+      ...data,
+      role,
+      updatedAt: new Date(),
+    };
+    return { data: mockUsers[index] };
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await delay(500);
+    const index = mockUsers.findIndex((u) => u.id === id);
+    if (index === -1) {
+      throw { response: { status: 404, data: { message: 'User not found' } } };
+    }
+    // Don't allow deleting yourself
+    const { user } = await import('../utils/auth').then((m) => m.getAuth());
+    if (user?.id === id) {
+      throw { response: { status: 400, data: { message: 'Cannot delete yourself' } } };
+    }
+    mockUsers.splice(index, 1);
+  },
+};
+
+// Mock Roles API
+export const mockRolesAPI = {
+  getAll: async (): Promise<{ data: Role[] }> => {
+    await delay(400);
+    return { data: [...mockRoles] };
+  },
+
+  getOne: async (id: number): Promise<{ data: Role }> => {
+    await delay(300);
+    const role = mockRoles.find((r) => r.id === id);
+    if (!role) {
+      throw { response: { status: 404, data: { message: 'Role not found' } } };
+    }
+    return { data: role };
   },
 };
 

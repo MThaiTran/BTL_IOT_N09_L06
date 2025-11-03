@@ -90,6 +90,43 @@ export interface SystemLog {
   updatedAt: Date;
 }
 
+// Role Types
+export enum UserRole {
+  ADMIN = 1,
+  TECHNICIAN = 2,
+  ENDUSER = 3, // House Owner
+}
+
+export enum ERole {
+  ADMIN = 'Admin',
+  TECHNICIAN = 'Technician',
+  ENDUSER = 'User', // House Owner
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Permission {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RolePermission {
+  id: number;
+  roleId: number;
+  permissionId: number;
+  role?: Role;
+  permission?: Permission;
+}
+
 // User Types
 export interface User {
   id: number;
@@ -97,8 +134,24 @@ export interface User {
   name: string;
   status: string;
   roleId: number;
+  role?: Role;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface CreateUserDto {
+  name: string;
+  email: string;
+  password: string;
+  roleId: number;
+}
+
+export interface UpdateUserDto {
+  name?: string;
+  email?: string;
+  password?: string;
+  roleId?: number;
+  status?: string;
 }
 
 // Sensor Data (from Firebase/Real-time)

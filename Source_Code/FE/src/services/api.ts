@@ -8,6 +8,10 @@ import type {
   UpdateDeviceDto,
   DeviceType,
   SystemLog,
+  User,
+  Role,
+  CreateUserDto,
+  UpdateUserDto,
 } from '../types';
 import { USE_MOCK_DATA } from '../config';
 import {
@@ -15,6 +19,8 @@ import {
   mockDevicesAPI,
   mockDeviceTypesAPI,
   mockSystemLogsAPI,
+  mockUsersAPI,
+  mockRolesAPI,
 } from './mockData';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -94,6 +100,33 @@ export const systemLogsAPI = {
 
   getOne: (id: number): Promise<{ data: SystemLog }> =>
     USE_MOCK_DATA ? mockSystemLogsAPI.getOne(id) : api.get(`/system-logs/${id}`),
+};
+
+// Users API - Switch between mock and real API
+export const usersAPI = {
+  getAll: (): Promise<{ data: User[] }> =>
+    USE_MOCK_DATA ? mockUsersAPI.getAll() : api.get('/users'),
+
+  getOne: (id: number): Promise<{ data: User }> =>
+    USE_MOCK_DATA ? mockUsersAPI.getOne(id) : api.get(`/users/${id}`),
+
+  create: (data: CreateUserDto): Promise<{ data: User }> =>
+    USE_MOCK_DATA ? mockUsersAPI.create(data) : api.post('/users', data),
+
+  update: (id: number, data: UpdateUserDto): Promise<{ data: User }> =>
+    USE_MOCK_DATA ? mockUsersAPI.update(id, data) : api.patch(`/users/${id}`, data),
+
+  delete: (id: number): Promise<void> =>
+    USE_MOCK_DATA ? mockUsersAPI.delete(id) : api.delete(`/users/${id}`),
+};
+
+// Roles API - Switch between mock and real API
+export const rolesAPI = {
+  getAll: (): Promise<{ data: Role[] }> =>
+    USE_MOCK_DATA ? mockRolesAPI.getAll() : api.get('/roles'),
+
+  getOne: (id: number): Promise<{ data: Role }> =>
+    USE_MOCK_DATA ? mockRolesAPI.getOne(id) : api.get(`/roles/${id}`),
 };
 
 export default api;

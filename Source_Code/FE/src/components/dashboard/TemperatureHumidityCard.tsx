@@ -1,5 +1,5 @@
 import { Thermometer, Droplets, Wifi, WifiOff } from 'lucide-react';
-import { Device } from '../../../types';
+import { Device } from '../../types';
 import { format } from 'date-fns';
 
 interface TemperatureHumidityCardProps {

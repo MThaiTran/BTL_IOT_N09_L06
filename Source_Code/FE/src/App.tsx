@@ -1,12 +1,17 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { isAuthenticated } from './utils/auth';
+import { getCurrentUserRole } from './utils/roles';
+import { UserRole } from './types';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import DevicesPage from './pages/DevicesPage';
 import LogsPage from './pages/LogsPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import UsersManagementPage from './pages/admin/UsersManagementPage';
 import Layout from './components/Layout';
+import RoleGuard from './components/guards/RoleGuard';
 import MockDataIndicator from './components/MockDataIndicator';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -18,9 +23,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   if (isAuthenticated()) {
-    return <Navigate to="/dashboard" replace />;
+    return <RoleBasedRedirect />;
   }
   return <>{children}</>;
+}
+
+function RoleBasedRedirect() {
+  const userRole = getCurrentUserRole();
+  
+  if (userRole === UserRole.ADMIN) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+  
+  return <Navigate to="/dashboard" replace />;
 }
 
 function App() {
@@ -43,19 +58,37 @@ function App() {
             </PublicRoute>
           }
         />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<RoleBasedRedirect />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="devices" element={<DevicesPage />} />
+        <Route path="logs" element={<LogsPage />} />
+        
+        {/* Admin Routes */}
         <Route
-          path="/"
+          path="admin/dashboard"
           element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
+            <RoleGuard allowedRoles={[UserRole.ADMIN]}>
+              <AdminDashboardPage />
+            </RoleGuard>
           }
-        >
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="devices" element={<DevicesPage />} />
-          <Route path="logs" element={<LogsPage />} />
-        </Route>
+        />
+        <Route
+          path="admin/users"
+          element={
+            <RoleGuard allowedRoles={[UserRole.ADMIN]}>
+              <UsersManagementPage />
+            </RoleGuard>
+          }
+        />
+      </Route>
       </Routes>
       <MockDataIndicator />
     </>
