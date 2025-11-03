@@ -1,13 +1,18 @@
+import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Settings, FileText, LogOut, Menu, X } from 'lucide-react';
+import { Home, Settings, FileText, LogOut, Menu, X, Users, Shield } from 'lucide-react';
 import { useState } from 'react';
-import { clearAuth } from '../utils/auth';
+import { clearAuth, getAuth } from '../utils/auth';
+import { getCurrentUserRole, getRoleDisplayName } from '../utils/roles';
+import { UserRole } from '../types';
 import toast from 'react-hot-toast';
 
 function Layout() {
     const location = useLocation();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { user } = getAuth();
+    const userRole = getCurrentUserRole();
 
     const handleLogout = () => {
         clearAuth();
@@ -15,11 +20,33 @@ function Layout() {
         navigate('/login');
     };
 
-    const navItems = [
+    // Base navigation items
+    const baseNavItems = [
         { path: '/dashboard', label: 'Dashboard', icon: Home },
         { path: '/devices', label: 'Thiết Bị', icon: Settings },
         { path: '/logs', label: 'Nhật Ký', icon: FileText },
     ];
+
+    // Admin navigation items
+    const adminNavItems = [
+        { path: '/admin/dashboard', label: 'Admin Dashboard', icon: Shield },
+        { path: '/admin/users', label: 'Quản lý Người dùng', icon: Users },
+        ...baseNavItems,
+    ];
+
+    // Get navigation items based on role
+    const getNavItems = () => {
+        switch (userRole) {
+            case UserRole.ADMIN:
+                return adminNavItems;
+            case UserRole.TECHNICIAN:
+            case UserRole.ENDUSER:
+            default:
+                return baseNavItems;
+        }
+    };
+
+    const navItems = getNavItems();
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -45,17 +72,29 @@ function Layout() {
         `}
             >
                 <div className="flex flex-col h-full">
-                    {/* Logo */}
-                    <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                        <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
-                            Smart Home IoT
-                        </h1>
-                        <button
-                            onClick={() => setSidebarOpen(false)}
-                            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                        >
-                            <X size={20} />
-                        </button>
+                    {/* Logo & User Info */}
+                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between mb-3">
+                            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
+                                Smart Home IoT
+                            </h1>
+                            <button
+                                onClick={() => setSidebarOpen(false)}
+                                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        {user && (
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                    {user.name}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    {getRoleDisplayName(user.roleId)}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Navigation */}

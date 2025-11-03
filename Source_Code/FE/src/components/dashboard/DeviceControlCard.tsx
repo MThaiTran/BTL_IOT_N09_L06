@@ -1,16 +1,15 @@
 import { useState } from 'react';
-import { Device } from '../../../types';
-import { LucideIcon, Power, Settings } from 'lucide-react';
+import { Device } from '../../types';
+import { LucideIcon, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface DeviceControlCardProps {
   title: string;
   icon: LucideIcon;
   devices: Device[];
-  deviceType: 'light' | 'fan';
 }
 
-function DeviceControlCard({ title, icon: Icon, devices, deviceType }: DeviceControlCardProps) {
+function DeviceControlCard({ title, icon: Icon, devices }: DeviceControlCardProps) {
   const [autoMode, setAutoMode] = useState<Record<number, boolean>>({});
 
   // Mock device states - Replace with actual API calls
@@ -83,10 +82,9 @@ function DeviceControlCard({ title, icon: Icon, devices, deviceType }: DeviceCon
                     onClick={() => toggleAutoMode(device.id)}
                     className={`
                       px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
-                      ${
-                        isAuto
-                          ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                      ${isAuto
+                        ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                       }
                     `}
                   >

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { devicesAPI, deviceTypesAPI } from '../services/api';
 import { Device, DeviceType, CreateDeviceDto } from '../types';
+import { getAuth } from '../utils/auth';
+import { canViewAllDevices } from '../utils/roles';
 import { Plus, Edit, Trash2, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DeviceModal from '../components/devices/DeviceModal';
@@ -11,10 +13,18 @@ function DevicesPage() {
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: devices, isLoading } = useQuery({
+  const { user } = getAuth();
+  const canViewAll = canViewAllDevices();
+
+  const { data: allDevices, isLoading } = useQuery({
     queryKey: ['devices'],
     queryFn: () => devicesAPI.getAll().then((res) => res.data),
   });
+
+  // Filter devices based on role: House Owner only sees their devices
+  const devices = canViewAll
+    ? allDevices
+    : allDevices?.filter((d) => d.userId === user?.id) || [];
 
   const { data: deviceTypes } = useQuery({
     queryKey: ['device-types'],

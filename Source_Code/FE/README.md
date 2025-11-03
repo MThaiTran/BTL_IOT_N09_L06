@@ -5,12 +5,15 @@ Giao diện web cho hệ thống Nhà Thông Minh Mini - Dự án IoT N12_L06
 ## Tính năng
 
 - ✅ **Đăng nhập/Đăng ký**: Xác thực người dùng với JWT
+- ✅ **Hệ thống phân quyền**: 3 vai trò (Admin, Technician, House Owner)
 - ✅ **Dashboard**: Hiển thị nhiệt độ, độ ẩm theo thời gian thực
 - ✅ **Điều khiển thiết bị**: Bật/tắt đèn và quạt thủ công hoặc tự động
-- ✅ **Quản lý thiết bị**: Thêm, sửa, xóa thiết bị IoT
+- ✅ **Quản lý thiết bị**: Thêm, sửa, xóa thiết bị IoT (theo quyền)
+- ✅ **Quản lý người dùng** (Admin only): Thêm, sửa, xóa, phân quyền người dùng
 - ✅ **Nhật ký hệ thống**: Theo dõi logs và cảnh báo
 - ✅ **Giao diện responsive**: Tương thích mobile và desktop
 - ✅ **Dark mode**: Hỗ trợ chế độ tối
+- ✅ **Role-based navigation**: Menu khác nhau theo vai trò
 
 ## Công nghệ sử dụng
 
@@ -50,13 +53,25 @@ npm run preview
 export const USE_MOCK_DATA = false; // Đổi từ true sang false
 ```
 
-### Mock Account để Test
+### Mock Accounts để Test
 
 Khi ở chế độ Mock Data, bạn có thể đăng nhập với:
-- **Email:** `user@test.com`
-- **Password:** `password123`
+
+**Admin (Quản trị viên):**
+- Email: `admin@test.com`
+- Password: `admin123`
+
+**House Owner (Chủ nhà):**
+- Email: `owner@test.com`
+- Password: `owner123`
+
+**Technician (Kỹ thuật viên):**
+- Email: `tech@test.com`
+- Password: `tech123`
 
 Hoặc đăng ký tài khoản mới với bất kỳ email/password nào.
+
+> Xem thêm chi tiết về hệ thống phân quyền trong file `ROLE_SYSTEM.md`
 
 ### Environment Variables (Khi dùng API thật)
 
