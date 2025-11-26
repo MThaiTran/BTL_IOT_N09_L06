@@ -14,7 +14,7 @@
 const char* ssid = "Wokwi-GUEST";
 const char* password = ""; 
 
-// --- MQTT Broker Credentials (from your HiveMQ page) ---
+// --- MQTT Broker Credentials ---
 const char* mqtt_server = "______";
 const int mqtt_port = 8883;
 const char* mqtt_user = "______";
@@ -50,13 +50,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived on topic: ");
   Serial.println(topic);
 
-  // Convert payload to a string
   char message[length + 1];
   memcpy(message, payload, length);
   message[length] = '\0';
   String messageStr = String(message);
   
-  // Compare the topic and act accordingly
   if (strcmp(topic, "smarthome/controls/fan") == 0) {
     int state = messageStr.toInt();
     digitalWrite(RELAY_FAN_PIN, state);
@@ -77,14 +75,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    // Create a random client ID
     String clientId = "ESP32Client-";
     clientId += String(random(0xffff), HEX);
     
     // Attempt to connect
     if (client.connect(clientId.c_str(), mqtt_user, mqtt_pass)) {
       Serial.println("connected!");
-      // Re-subscribe to all control topics
       client.subscribe("smarthome/controls/fan");
       client.subscribe("smarthome/controls/light");
     } else {
@@ -103,13 +99,11 @@ void setup() {
   Serial.begin(115200);
   Serial.println("MQTT Smart Home Control - Initializing...");
 
-  // Setup actuators
   pinMode(RELAY_FAN_PIN, OUTPUT);
   pinMode(RELAY_LIGHT_PIN, OUTPUT);
   pinMode(LED_FAN_PIN, OUTPUT);
   pinMode(LED_LIGHT_PIN, OUTPUT);
 
-  // Connect to Wi-Fi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
