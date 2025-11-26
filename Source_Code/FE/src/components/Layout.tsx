@@ -1,6 +1,18 @@
-import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Settings, FileText, LogOut, Menu, X, Users, Shield } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import {
+    Home,
+    Settings,
+    FileText,
+    LogOut,
+    Menu,
+    X,
+    Users,
+    Shield,
+    UploadCloud,
+    Mic,
+    KeyRound,
+} from 'lucide-react';
 import { useState } from 'react';
 import { clearAuth, getAuth } from '../utils/auth';
 import { getCurrentUserRole, getRoleDisplayName } from '../utils/roles';
@@ -20,36 +32,70 @@ function Layout() {
         navigate('/login');
     };
 
-    // Base navigation items
-    const baseNavItems = [
+    type NavItem = { path: string; label: string; icon: LucideIcon };
+
+    const baseNavItems: NavItem[] = [
         { path: '/dashboard', label: 'Dashboard', icon: Home },
         { path: '/devices', label: 'Thiết Bị', icon: Settings },
         { path: '/logs', label: 'Nhật Ký', icon: FileText },
     ];
 
-    // Admin navigation items
-    const adminNavItems = [
+    const adminNavItems: NavItem[] = [
         { path: '/admin/dashboard', label: 'Admin Dashboard', icon: Shield },
         { path: '/admin/users', label: 'Quản lý Người dùng', icon: Users },
-        ...baseNavItems,
     ];
+
+    const firmwareNavItem: NavItem = {
+        path: '/firmware',
+        label: 'Cập nhật OTA',
+        icon: UploadCloud,
+    };
+
+    const voiceControlNavItem: NavItem = {
+        path: '/voice-control',
+        label: 'Giọng nói',
+        icon: Mic,
+    };
+
+    const permissionsNavItem: NavItem = {
+        path: '/permissions',
+        label: 'Phân quyền',
+        icon: KeyRound,
+    };
 
     // Get navigation items based on role
     const getNavItems = () => {
+        const nav: NavItem[] = [];
+
         switch (userRole) {
             case UserRole.ADMIN:
-                return adminNavItems;
+                nav.push(...adminNavItems, permissionsNavItem, firmwareNavItem, voiceControlNavItem, ...baseNavItems);
+                break;
             case UserRole.TECHNICIAN:
-            case UserRole.ENDUSER:
+                nav.push(firmwareNavItem, voiceControlNavItem, ...baseNavItems);
+                break;
+            case UserRole.HOUSE_OWNER:
+                nav.push(permissionsNavItem, voiceControlNavItem, ...baseNavItems);
+                break;
+            case UserRole.GUEST:
+                nav.push(voiceControlNavItem, ...baseNavItems);
+                break;
             default:
-                return baseNavItems;
+                nav.push(...baseNavItems);
         }
+
+        // Remove potential duplicates by path
+        const unique = nav.filter(
+            (item, index, self) => index === self.findIndex((navItem) => navItem.path === item.path)
+        );
+
+        return unique;
     };
 
     const navItems = getNavItems();
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 lg:flex">
             {/* Mobile header */}
             <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between px-4 py-3">
@@ -67,7 +113,7 @@ function Layout() {
             <div
                 className={`
           fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out
-          lg:translate-x-0 lg:static lg:inset-0
+          lg:translate-x-0 lg:static lg:inset-auto lg:shadow-none lg:flex lg:flex-col
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
             >
@@ -98,7 +144,7 @@ function Layout() {
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 px-4 py-6 space-y-2">
+                    <nav className="flex-1 px-0 py-6 space-y-2">
                         {navItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = location.pathname === item.path;
@@ -144,8 +190,8 @@ function Layout() {
             )}
 
             {/* Main content */}
-            <div className="lg:ml-64">
-                <main className="p-4 lg:p-6">
+            <div className="flex-1 lg:ml-0">
+                <main className="px-4 py-4 lg:px-10 lg:py-6 max-w-[1600px] mx-auto w-full">
                     <Outlet />
                 </main>
             </div>

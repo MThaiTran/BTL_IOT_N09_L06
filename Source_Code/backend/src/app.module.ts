@@ -12,6 +12,7 @@ import { DeviceTypesModule } from './modules/device-types/device-types.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { RolePermissionModule } from './modules/role-permission/role-permission.module';
+import { SeedService } from './common/seed/seed.service';
 
 @Module({
   imports: [
@@ -28,6 +29,6 @@ import { RolePermissionModule } from './modules/role-permission/role-permission.
     ConfigModule.forRoot({ isGlobal: true }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, SeedService],
 })
 export class AppModule {}
