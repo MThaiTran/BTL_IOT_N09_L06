@@ -3,6 +3,7 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/modules/users/users.service';
 import * as bcrypt from 'bcrypt';
 import { SignupDto } from './dto/auth.dto';
+import { UserRole } from 'src/modules/users/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -62,7 +63,7 @@ export class AuthService {
         email,
         name: `${firstName} ${lastName}`,
         hashedPassword: this.hashPassword(random),
-        roleId: 3,
+        roleId: UserRole.HOUSE_OWNER,
       };
       user = await this.usersService.create(newUser);
     }

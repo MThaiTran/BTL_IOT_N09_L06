@@ -13,4 +13,8 @@ export class PermissionsService extends BaseService<Permission> {
   ) {
     super(new BaseRepository(permissionRepository));
   }
+
+  async findOneByName(name: string): Promise<Permission | null> {
+    return this.permissionRepository.findOne({ where: { name } });
+  }
 }

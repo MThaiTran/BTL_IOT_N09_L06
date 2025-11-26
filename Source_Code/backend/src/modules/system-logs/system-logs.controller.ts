@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { SystemLogsService } from './system-logs.service';
 import { CreateSystemLogDto } from './dto/create-system-log.dto';
@@ -21,36 +22,39 @@ import { SystemLog } from './entities/system-log.entity';
 import { RequestPermission } from 'src/common/helper/common.helper';
 import { EPermission } from 'src/common/enum/enum';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from 'src/common/guards/auth.guard';
+import { PermissionGuard } from 'src/common/guards/permission.guard';
 
 const tableName = 'SystemLog';
 @ApiBearerAuth()
 @Controller('system-logs')
+@UseGuards(AuthGuard, PermissionGuard) // Apply AuthGuard and PermissionGuard at controller level
 export class SystemLogsController {
   constructor(private readonly systemLogsService: SystemLogsService) {}
 
   @ApiCreateOne(SystemLog, CreateSystemLogDto)
-  @RequestPermission(EPermission.ADD_ONE, tableName)
+  @RequestPermission(EPermission.CREATE_SYSTEM_LOG, tableName)
   @Post()
   create(@Body() createSystemLogDto: CreateSystemLogDto) {
     return this.systemLogsService.create(createSystemLogDto);
   }
 
   @ApiFindAll(SystemLog)
-  @RequestPermission(EPermission.GET_ALL, tableName)
+  @RequestPermission(EPermission.VIEW_SYSTEM_LOGS, tableName)
   @Get()
   findAll() {
     return this.systemLogsService.findAll();
   }
 
   @ApiFindOne(SystemLog)
-  @RequestPermission(EPermission.GET_ONE, tableName)
+  @RequestPermission(EPermission.VIEW_SYSTEM_LOGS, tableName)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.systemLogsService.findOne(+id);
   }
 
   @ApiUpdateOne(SystemLog, UpdateSystemLogDto)
-  @RequestPermission(EPermission.EDIT_ONE, tableName)
+  @RequestPermission(EPermission.UPDATE_SYSTEM_LOG, tableName)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -60,7 +64,7 @@ export class SystemLogsController {
   }
 
   @ApiDeleteOne(SystemLog)
-  @RequestPermission(EPermission.DELETE_ONE, tableName)
+  @RequestPermission(EPermission.DELETE_SYSTEM_LOG, tableName)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.systemLogsService.remove(+id);

@@ -36,7 +36,14 @@ export const isAdmin = (): boolean => {
  * Check if current user is House Owner (ENDUSER)
  */
 export const isHouseOwner = (): boolean => {
-  return hasRole(getCurrentUserRole() || 0, UserRole.ENDUSER);
+  return hasRole(getCurrentUserRole() || 0, UserRole.HOUSE_OWNER);
+};
+
+/**
+ * Check if current user is Guest
+ */
+export const isGuest = (): boolean => {
+  return hasRole(getCurrentUserRole() || 0, UserRole.GUEST);
 };
 
 /**
@@ -55,8 +62,10 @@ export const getRoleName = (roleId: number): string => {
       return ERole.ADMIN;
     case UserRole.TECHNICIAN:
       return ERole.TECHNICIAN;
-    case UserRole.ENDUSER:
-      return ERole.ENDUSER;
+    case UserRole.HOUSE_OWNER:
+      return ERole.HOUSE_OWNER;
+    case UserRole.GUEST:
+      return ERole.GUEST;
     default:
       return 'Unknown';
   }
@@ -71,8 +80,10 @@ export const getRoleDisplayName = (roleId: number): string => {
       return 'Quản trị viên';
     case UserRole.TECHNICIAN:
       return 'Kỹ thuật viên';
-    case UserRole.ENDUSER:
+    case UserRole.HOUSE_OWNER:
       return 'Chủ nhà';
+    case UserRole.GUEST:
+      return 'Thành viên gia đình';
     default:
       return 'Người dùng';
   }
@@ -91,7 +102,7 @@ export const canAccessAdmin = (): boolean => {
  */
 export const canManageDevices = (): boolean => {
   const role = getCurrentUserRole();
-  return role === UserRole.ADMIN || role === UserRole.ENDUSER || role === UserRole.TECHNICIAN;
+  return role === UserRole.ADMIN || role === UserRole.HOUSE_OWNER || role === UserRole.TECHNICIAN;
 };
 
 /**

@@ -1,24 +1,11 @@
-import type {
-  Device,
-  DeviceType,
-  SystemLog,
-  AuthResponse,
-  CreateDeviceDto,
-  UpdateDeviceDto,
-  LoginDto,
-  SignupDto,
-  User,
-  Role,
-  CreateUserDto,
-  UpdateUserDto,
-} from '../types';
+import type * as types from '../types';
 import { EDeviceLog, UserRole, ERole } from '../types';
 
 // Mock delay to simulate network request
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Mock Roles
-const mockRoles: Role[] = [
+const mockRoles: types.Role[] = [
   {
     id: UserRole.ADMIN,
     name: ERole.ADMIN,
@@ -34,16 +21,23 @@ const mockRoles: Role[] = [
     updatedAt: new Date('2024-01-01'),
   },
   {
-    id: UserRole.ENDUSER,
-    name: ERole.ENDUSER,
+    id: UserRole.HOUSE_OWNER,
+    name: ERole.HOUSE_OWNER,
     description: 'Chủ nhà - Quản lý thiết bị của mình',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  },
+  {
+    id: UserRole.GUEST,
+    name: ERole.GUEST,
+    description: 'Thành viên gia đình - Điều khiển thiết bị được cấp quyền',
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   },
 ];
 
 // Mock Users - stored in memory
-let mockUsers: User[] = [
+let mockUsers: types.User[] = [
   {
     id: 1,
     email: 'admin@test.com',
@@ -59,7 +53,7 @@ let mockUsers: User[] = [
     email: 'owner@test.com',
     name: 'House Owner',
     status: 'active',
-    roleId: UserRole.ENDUSER,
+    roleId: UserRole.HOUSE_OWNER,
     role: mockRoles[2],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -74,15 +68,25 @@ let mockUsers: User[] = [
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   },
+  {
+    id: 4,
+    email: 'guest@test.com',
+    name: 'Guest User',
+    status: 'active',
+    roleId: UserRole.GUEST,
+    role: mockRoles[3],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  },
 ];
 
 // Mock Device Types
-const mockDeviceTypes: DeviceType[] = [
+const mockDeviceTypes: types.DeviceType[] = [
   {
     id: 1,
     name: 'Temperature Sensor',
     description: 'Cảm biến nhiệt độ và độ ẩm',
-    createdAt: new Date('2024-01-01'),
+    createdAt: new Date('2025-01-11'),
     updatedAt: new Date('2024-01-01'),
   },
   {
@@ -102,7 +106,7 @@ const mockDeviceTypes: DeviceType[] = [
 ];
 
 // Mock Devices - stored in memory to simulate database
-let mockDevices: Device[] = [
+let mockDevices: types.Device[] = [
   {
     id: 1,
     name: 'Sensor Phòng Khách',
@@ -166,7 +170,7 @@ let mockDevices: Device[] = [
 ];
 
 // Mock System Logs
-let mockLogs: SystemLog[] = [
+let mockLogs: types.SystemLog[] = [
   {
     id: 1,
     log: EDeviceLog.INFO,
@@ -226,21 +230,22 @@ let mockLogs: SystemLog[] = [
 
 // Mock Auth API
 export const mockAuthAPI = {
-  signin: async (data: LoginDto): Promise<{ data: AuthResponse }> => {
+  signin: async (data: types.LoginDto): Promise<{ data: types.AuthResponse }> => {
     await delay(800);
 
     // Mock validation with multiple users
-    const mockCredentials: Record<string, { user: User; password: string }> = {
+    const mockCredentials: Record<string, { user: types.User; password: string }> = {
       'admin@test.com': { user: mockUsers[0], password: 'admin123' },
       'owner@test.com': { user: mockUsers[1], password: 'owner123' },
       'tech@test.com': { user: mockUsers[2], password: 'tech123' },
+      'guest@test.com': { user: mockUsers[3], password: 'guest123' }, // New Guest user
       'user@test.com': { user: mockUsers[1], password: 'password123' }, // Legacy support
     };
 
     const credential = mockCredentials[data.email];
 
     if (credential && credential.password === data.password) {
-      const response: AuthResponse = {
+      const response: types.AuthResponse = {
         payload: {
           id: credential.user.id,
           email: credential.user.email,
@@ -256,7 +261,7 @@ export const mockAuthAPI = {
     }
   },
 
-  signup: async (data: SignupDto): Promise<{ data: any }> => {
+  signup: async (data: types.SignupDto): Promise<{ data: any }> => {
     await delay(1000);
 
     if (data.email && data.password) {
@@ -289,7 +294,7 @@ export const mockAuthAPI = {
 
 // Mock Devices API
 export const mockDevicesAPI = {
-  getAll: async (): Promise<{ data: Device[] }> => {
+  getAll: async (): Promise<{ data: types.Device[] }> => {
     await delay(600);
     // Simulate real-time updates for some devices
     mockDevices = mockDevices.map((device) => {
@@ -305,7 +310,7 @@ export const mockDevicesAPI = {
     return { data: [...mockDevices] };
   },
 
-  getOne: async (id: number): Promise<{ data: Device }> => {
+  getOne: async (id: number): Promise<{ data: types.Device }> => {
     await delay(400);
     const device = mockDevices.find((d) => d.id === id);
     if (!device) {
@@ -314,10 +319,10 @@ export const mockDevicesAPI = {
     return { data: device };
   },
 
-  create: async (data: CreateDeviceDto): Promise<{ data: Device }> => {
+  create: async (data: types.CreateDeviceDto): Promise<{ data: types.Device }> => {
     await delay(800);
     const deviceType = mockDeviceTypes.find((dt) => dt.id === data.deviceTypeId);
-    const newDevice: Device = {
+    const newDevice: types.Device = {
       id: Math.max(...mockDevices.map((d) => d.id), 0) + 1,
       ...data,
       lastestDeviceUpdate: new Date(),
@@ -329,7 +334,7 @@ export const mockDevicesAPI = {
     return { data: newDevice };
   },
 
-  update: async (id: number, data: UpdateDeviceDto): Promise<{ data: Device }> => {
+  update: async (id: number, data: types.UpdateDeviceDto): Promise<{ data: types.Device }> => {
     await delay(700);
     const index = mockDevices.findIndex((d) => d.id === id);
     if (index === -1) {
@@ -358,12 +363,12 @@ export const mockDevicesAPI = {
 
 // Mock Device Types API
 export const mockDeviceTypesAPI = {
-  getAll: async (): Promise<{ data: DeviceType[] }> => {
+  getAll: async (): Promise<{ data: types.DeviceType[] }> => {
     await delay(400);
     return { data: [...mockDeviceTypes] };
   },
 
-  getOne: async (id: number): Promise<{ data: DeviceType }> => {
+  getOne: async (id: number): Promise<{ data: types.DeviceType }> => {
     await delay(300);
     const deviceType = mockDeviceTypes.find((dt) => dt.id === id);
     if (!deviceType) {
@@ -375,11 +380,11 @@ export const mockDeviceTypesAPI = {
 
 // Mock System Logs API
 export const mockSystemLogsAPI = {
-  getAll: async (): Promise<{ data: SystemLog[] }> => {
+  getAll: async (): Promise<{ data: types.SystemLog[] }> => {
     await delay(500);
     // Add a new log occasionally to simulate real-time logs
     if (Math.random() > 0.7) {
-      const newLog: SystemLog = {
+      const newLog: types.SystemLog = {
         id: Math.max(...mockLogs.map((l) => l.id), 0) + 1,
         log: EDeviceLog.INFO,
         logDescription: 'Hoạt động bình thường',
@@ -399,7 +404,7 @@ export const mockSystemLogsAPI = {
     return { data: [...mockLogs] };
   },
 
-  getOne: async (id: number): Promise<{ data: SystemLog }> => {
+  getOne: async (id: number): Promise<{ data: types.SystemLog }> => {
     await delay(300);
     const log = mockLogs.find((l) => l.id === id);
     if (!log) {
@@ -411,12 +416,12 @@ export const mockSystemLogsAPI = {
 
 // Mock Users API
 export const mockUsersAPI = {
-  getAll: async (): Promise<{ data: User[] }> => {
+  getAll: async (): Promise<{ data: types.User[] }> => {
     await delay(600);
     return { data: [...mockUsers] };
   },
 
-  getOne: async (id: number): Promise<{ data: User }> => {
+  getOne: async (id: number): Promise<{ data: types.User }> => {
     await delay(400);
     const user = mockUsers.find((u) => u.id === id);
     if (!user) {
@@ -425,10 +430,10 @@ export const mockUsersAPI = {
     return { data: user };
   },
 
-  create: async (data: CreateUserDto): Promise<{ data: User }> => {
+  create: async (data: types.CreateUserDto): Promise<{ data: types.User }> => {
     await delay(800);
     const role = mockRoles.find((r) => r.id === data.roleId);
-    const newUser: User = {
+    const newUser: types.User = {
       id: Math.max(...mockUsers.map((u) => u.id), 0) + 1,
       email: data.email,
       name: data.name,
@@ -442,7 +447,7 @@ export const mockUsersAPI = {
     return { data: newUser };
   },
 
-  update: async (id: number, data: UpdateUserDto): Promise<{ data: User }> => {
+  update: async (id: number, data: types.UpdateUserDto): Promise<{ data: types.User }> => {
     await delay(700);
     const index = mockUsers.findIndex((u) => u.id === id);
     if (index === -1) {
@@ -475,12 +480,12 @@ export const mockUsersAPI = {
 
 // Mock Roles API
 export const mockRolesAPI = {
-  getAll: async (): Promise<{ data: Role[] }> => {
+  getAll: async (): Promise<{ data: types.Role[] }> => {
     await delay(400);
     return { data: [...mockRoles] };
   },
 
-  getOne: async (id: number): Promise<{ data: Role }> => {
+  getOne: async (id: number): Promise<{ data: types.Role }> => {
     await delay(300);
     const role = mockRoles.find((r) => r.id === id);
     if (!role) {

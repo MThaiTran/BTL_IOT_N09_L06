@@ -94,13 +94,15 @@ export interface SystemLog {
 export enum UserRole {
   ADMIN = 1,
   TECHNICIAN = 2,
-  ENDUSER = 3, // House Owner
+  HOUSE_OWNER = 3, // Corresponds to House Owner
+  GUEST = 4, // Corresponds to Guest/Family Member
 }
 
 export enum ERole {
   ADMIN = 'Admin',
   TECHNICIAN = 'Technician',
-  ENDUSER = 'User', // House Owner
+  HOUSE_OWNER = 'House Owner',
+  GUEST = 'Guest',
 }
 
 export interface Role {
