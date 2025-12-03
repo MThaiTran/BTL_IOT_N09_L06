@@ -9,7 +9,7 @@ export class Device extends BaseEntity {
   name: string;
 
   @Column({ type: 'varchar', length: 255 })
-  fireBasePath: string;
+  firebasePath: string;
 
   @Column({ type: 'text' })
   description: string;
@@ -22,6 +22,9 @@ export class Device extends BaseEntity {
 
   @Column({ type: 'float' })
   thresholdHigh: number;
+
+  @Column({ type: 'float' })
+  deltaRange: number;
 
   @Column({ type: 'timestamp', nullable: true })
   lastestDeviceUpdate: Date | null;
