@@ -32,6 +32,6 @@ import { FileHandlerModule } from './file-handler/file-handler.module';
     FileHandlerModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, SeedService],
 })
 export class AppModule {}
