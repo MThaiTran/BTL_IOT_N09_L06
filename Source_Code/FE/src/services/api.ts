@@ -23,7 +23,7 @@ import {
   mockRolesAPI,
 } from './mockData';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '26.65.195.57:3000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -56,9 +56,8 @@ api.interceptors.response.use(
 
 // Auth API - Switch between mock and real API
 export const authAPI = {
-  signin: (data: LoginDto): Promise<{ data: AuthResponse }> =>
-    USE_MOCK_DATA ? mockAuthAPI.signin(data) : api.post('/auth/signin', data),
-
+  signin: (data: LoginDto) =>
+    api.post('/auth/signin', data),
   signup: (data: SignupDto): Promise<{ data: any }> =>
     USE_MOCK_DATA ? mockAuthAPI.signup(data) : api.post('/auth/signup', data),
 
