@@ -12,7 +12,8 @@ import { DeviceTypesModule } from './modules/device-types/device-types.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { RolePermissionModule } from './modules/role-permission/role-permission.module';
-import { SeedService } from './common/seed/seed.service';
+import { MqttModule } from './mqtt/mqtt.module';
+import { FileHandlerModule } from './file-handler/file-handler.module';
 
 @Module({
   imports: [
@@ -27,6 +28,8 @@ import { SeedService } from './common/seed/seed.service';
     RolesModule,
     RolePermissionModule,
     ConfigModule.forRoot({ isGlobal: true }),
+    MqttModule,
+    FileHandlerModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedService],
