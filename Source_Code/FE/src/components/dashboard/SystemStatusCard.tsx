@@ -1,4 +1,4 @@
-import { Device } from '../../../types';
+import { Device } from '../../types';
 import { CheckCircle, XCircle, AlertCircle, Activity } from 'lucide-react';
 
 interface SystemStatusCardProps {

@@ -13,7 +13,7 @@ import type {
   CreateUserDto,
   UpdateUserDto,
 } from "../types";
-import { USE_MOCK_DATA } from "../config";
+import { USE_MOCK_DATA } from "../config/config";
 import {
   mockAuthAPI,
   mockDevicesAPI,

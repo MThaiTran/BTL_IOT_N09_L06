@@ -37,7 +37,7 @@ function DeviceControlCard({ title, icon: Icon, devices }: DeviceControlCardProp
 
   if (devices.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
             <Icon className="text-primary-600 dark:text-primary-400" size={24} />

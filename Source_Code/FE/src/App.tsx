@@ -73,12 +73,12 @@ function App() {
         }
       >
         <Route index element={<RoleBasedRedirect />} />
-        {/* <Route path="dashboard" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER, UserRole.GUEST, UserRole.TECHNICIAN]}><DashboardPage /></RoleGuard>} />
-        <Route path="devices" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER, UserRole.TECHNICIAN]}><DevicesPage /></RoleGuard>} /> */}
+        <Route path="dashboard" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER, UserRole.GUEST, UserRole.TECHNICIAN]}><DashboardPage /></RoleGuard>} />
+        <Route path="devices" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER, UserRole.TECHNICIAN]}><DevicesPage /></RoleGuard>} />
         <Route path="logs" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER,  UserRole.TECHNICIAN]}><LogsPage /></RoleGuard>} />
-        {/* <Route path="firmware" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.TECHNICIAN]}><FirmwareUpdatePage /></RoleGuard>} />
+        <Route path="firmware" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.TECHNICIAN]}><FirmwareUpdatePage /></RoleGuard>} />
         <Route path="voice-control" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER, UserRole.TECHNICIAN]}><VoiceControlPage /></RoleGuard>} />
-        <Route path="permissions" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER]}><PermissionsPage /></RoleGuard>} /> */}
+        <Route path="permissions" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER]}><PermissionsPage /></RoleGuard>} />
         
         {/* Admin Routes */}
         <Route
