@@ -18,38 +18,14 @@ export enum ERole {
 }
 
 export enum EPermission {
-  // General CRUD
-  CREATE = 'Create',
-  READ = 'Read',
-  UPDATE = 'Update',
-  DELETE = 'Delete',
-
-  // Device Specific
-  CREATE_DEVICE = 'CreateDevice',
-  READ_DEVICE = 'ReadDevice',
-  UPDATE_DEVICE = 'UpdateDevice',
-  DELETE_DEVICE = 'DeleteDevice',
-  CONTROL_DEVICE = 'ControlDevice',
-  VIEW_ALL_DEVICES = 'ViewAllDevices',
-  VIEW_OWN_DEVICES = 'ViewOwnDevices',
-
-  // User Specific
-  CREATE_USER = 'CreateUser',
-  READ_USER = 'ReadUser',
-  UPDATE_USER = 'UpdateUser',
-  DELETE_USER = 'DeleteUser',
-  VIEW_ALL_USERS = 'ViewAllUsers',
-
-  // Role and Permission Management
-  MANAGE_ROLES = 'ManageRoles',
-  MANAGE_PERMISSIONS = 'ManagePermissions',
-
-  // System Logs
-  VIEW_SYSTEM_LOGS = 'ViewSystemLogs',
-
-  // Test Permissions (can be removed later)
-  TEST_AUTH = 'TestAuth',
-  TEST_ADMIN_AUTH = 'TestAdminAuth',
+  ADD_ONE = 'Add',
+  EDIT_ONE = 'Edit',
+  DELETE_ONE = 'Delete',
+  GET_ONE = 'GetOne',
+  GET_ALL = 'GetAll',
+  TEST = 'TestAuth',
+  TEST_ADMIN = 'TestAdminAuth',
+  CREATE_EXAM_TEMPLATE = 'CreateResultFromExam',
 }
 
 export enum EDeviceUnit {

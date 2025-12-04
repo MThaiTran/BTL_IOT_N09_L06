@@ -36,14 +36,14 @@ export class UsersController {
 
   @Post()
   @ApiCreateOne(User, CreateUserDto)
-  @RequestPermission(EPermission.CREATE_USER, tableName) // Specific permission for creating users
+  @RequestPermission(EPermission.ADD_ONE, tableName) // Specific permission for creating users
   async create(@Body() entity: CreateUserDto): Promise<User> {
     return this.usersService.create(entity);
   }
 
   @Patch(':id')
   @ApiUpdateOne(User, UpdateUserDto)
-  @RequestPermission(EPermission.UPDATE_USER, tableName) // Specific permission for updating users
+  @RequestPermission(EPermission.EDIT_ONE, tableName) // Specific permission for updating users
   async update(
     @Param('id') id: number,
     @Body() entity: UpdateUserDto,
@@ -53,21 +53,21 @@ export class UsersController {
 
   @Get()
   @ApiFindAll(User)
-  @RequestPermission(EPermission.VIEW_ALL_USERS, tableName) // Specific permission for viewing all users
+  @RequestPermission(EPermission.GET_ALL, tableName) // Specific permission for viewing all users
   async findAll(@Query() query: IListOptions<User>) {
     return this.usersService.findAll(query);
   }
 
   @Get(':id')
   @ApiFindOne(User)
-  @RequestPermission(EPermission.READ_USER, tableName) // Specific permission for reading a single user
+  @RequestPermission(EPermission.GET_ONE, tableName) // Specific permission for reading a single user
   async findOne(@Param('id') id: number): Promise<User | null> {
     return this.usersService.findOne(id);
   }
 
   @Delete(':id')
   @ApiDeleteOne(User)
-  @RequestPermission(EPermission.DELETE_USER, tableName) // Specific permission for deleting users
+  @RequestPermission(EPermission.DELETE_ONE, tableName) // Specific permission for deleting users
   async remove(@Param('id') id: number) {
     return this.usersService.remove(id);
   }

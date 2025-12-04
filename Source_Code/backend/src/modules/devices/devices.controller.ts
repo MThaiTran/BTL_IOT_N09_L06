@@ -33,35 +33,35 @@ export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
 
   @ApiCreateOne(Device, CreateDeviceDto)
-  @RequestPermission(EPermission.CREATE_DEVICE, tableName)
+  @RequestPermission(EPermission.ADD_ONE, tableName)
   @Post()
   create(@Body() createDeviceDto: CreateDeviceDto) {
     return this.devicesService.create(createDeviceDto);
   }
 
   @ApiFindAll(Device)
-  @RequestPermission(EPermission.VIEW_ALL_DEVICES, tableName)
+  @RequestPermission(EPermission.GET_ALL, tableName)
   @Get()
   findAll() {
     return this.devicesService.findAll();
   }
 
   @ApiFindOne(Device)
-  @RequestPermission(EPermission.READ_DEVICE, tableName)
+  @RequestPermission(EPermission.GET_ONE, tableName)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.devicesService.findOne(+id);
   }
 
   @ApiUpdateOne(Device, UpdateDeviceDto)
-  @RequestPermission(EPermission.UPDATE_DEVICE, tableName)
+  @RequestPermission(EPermission.EDIT_ONE, tableName)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDeviceDto: UpdateDeviceDto) {
     return this.devicesService.update(+id, updateDeviceDto);
   }
 
   @ApiDeleteOne(Device)
-  @RequestPermission(EPermission.DELETE_DEVICE, tableName)
+  @RequestPermission(EPermission.DELETE_ONE, tableName)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.devicesService.remove(+id);
