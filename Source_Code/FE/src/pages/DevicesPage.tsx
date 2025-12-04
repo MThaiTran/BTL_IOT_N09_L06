@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { devicesAPI, deviceTypesAPI } from '../services/api';
 import { Device, DeviceType, CreateDeviceDto } from '../types';
 import { getAuth } from '../utils/auth';
-import { canViewAllDevices } from '../utils/roles';
+import { canViewAllDevices, canManageDevices, isHouseOwner, isAdmin } from '../utils/roles';
 import { Plus, Edit, Trash2, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DeviceModal from '../components/devices/DeviceModal';
@@ -15,6 +15,7 @@ function DevicesPage() {
 
   const { user } = getAuth();
   const canViewAll = canViewAllDevices();
+  const canManipulateDevices = canManageDevices();
 
   const { data: allDevices, isLoading } = useQuery({
     queryKey: ['devices'],
@@ -77,13 +78,15 @@ function DevicesPage() {
             Thêm, chỉnh sửa và quản lý các thiết bị IoT
           </p>
         </div>
-        <button
-          onClick={handleAdd}
-          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
-        >
-          <Plus size={20} />
-          Thêm thiết bị
-        </button>
+        {canManipulateDevices && (
+          <button
+            onClick={handleAdd}
+            className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+          >
+            <Plus size={20} />
+            Thêm thiết bị
+          </button>
+        )}
       </div>
 
       {/* Devices Grid */}
@@ -100,6 +103,7 @@ function DevicesPage() {
                   deleteMutation.mutate(id);
                 }
               }}
+              canManipulate={canManipulateDevices}
             />
           ))}
         </div>
@@ -107,13 +111,15 @@ function DevicesPage() {
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
           <Settings className="mx-auto text-gray-400 mb-4" size={48} />
           <p className="text-gray-600 dark:text-gray-400 mb-4">Chưa có thiết bị nào</p>
-          <button
-            onClick={handleAdd}
-            className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
-          >
-            <Plus size={20} />
-            Thêm thiết bị đầu tiên
-          </button>
+          {canManipulateDevices && (
+            <button
+              onClick={handleAdd}
+              className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+            >
+              <Plus size={20} />
+              Thêm thiết bị đầu tiên
+            </button>
+          )}
         </div>
       )}
 
@@ -134,9 +140,10 @@ interface DeviceCardProps {
   deviceType?: DeviceType;
   onEdit: (device: Device) => void;
   onDelete: (id: number) => void;
+  canManipulate: boolean;
 }
 
-function DeviceCard({ device, deviceType, onEdit, onDelete }: DeviceCardProps) {
+function DeviceCard({ device, deviceType, onEdit, onDelete, canManipulate }: DeviceCardProps) {
   const isOnline = device.lastestDeviceUpdate
     ? new Date(device.lastestDeviceUpdate).getTime() > Date.now() - 60000
     : false;
@@ -179,21 +186,23 @@ function DeviceCard({ device, deviceType, onEdit, onDelete }: DeviceCardProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <button
-          onClick={() => onEdit(device)}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
-        >
-          <Edit size={16} />
-          Chỉnh sửa
-        </button>
-        <button
-          onClick={() => onDelete(device.id)}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
+      {canManipulate && (
+        <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => onEdit(device)}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
+          >
+            <Edit size={16} />
+            Chỉnh sửa
+          </button>
+          <button
+            onClick={() => onDelete(device.id)}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

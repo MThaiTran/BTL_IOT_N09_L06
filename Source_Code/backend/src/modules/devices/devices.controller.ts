@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { DevicesService } from './devices.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
@@ -21,10 +22,13 @@ import { Device } from './entities/device.entity';
 import { RequestPermission } from 'src/common/helper/common.helper';
 import { EPermission } from 'src/common/enum/enum';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from 'src/common/guards/auth.guard';
+import { PermissionGuard } from 'src/common/guards/permission.guard';
 
 const tableName = 'Device';
 @ApiBearerAuth()
 @Controller('devices')
+@UseGuards(AuthGuard, PermissionGuard) // Apply AuthGuard and PermissionGuard at controller level
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
 

@@ -1,7 +1,8 @@
 export enum UserRole {
   ADMIN = 1,
   TECHNICIAN = 2,
-  ENDUSER = 3,
+  HOUSE_OWNER = 3,
+  GUEST = 4,
 }
 
 export enum Status {
@@ -12,7 +13,8 @@ export enum Status {
 export enum ERole {
   ADMIN = 'Admin',
   TECHNICIAN = 'Technician',
-  ENDUSER = 'User',
+  HOUSE_OWNER = 'House Owner',
+  GUEST = 'Guest',
 }
 
 export enum EPermission {

@@ -12,6 +12,8 @@ import { DeviceTypesModule } from './modules/device-types/device-types.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { RolePermissionModule } from './modules/role-permission/role-permission.module';
+import { MqttModule } from './mqtt/mqtt.module';
+import { FileHandlerModule } from './modules/file-handler/file-handler.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { RolePermissionModule } from './modules/role-permission/role-permission.
     RolesModule,
     RolePermissionModule,
     ConfigModule.forRoot({ isGlobal: true }),
+    MqttModule,
+    FileHandlerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -10,6 +10,9 @@ Giao diện web cho hệ thống Nhà Thông Minh Mini - Dự án IoT N12_L06
 - ✅ **Điều khiển thiết bị**: Bật/tắt đèn và quạt thủ công hoặc tự động
 - ✅ **Quản lý thiết bị**: Thêm, sửa, xóa thiết bị IoT (theo quyền)
 - ✅ **Quản lý người dùng** (Admin only): Thêm, sửa, xóa, phân quyền người dùng
+- ✅ **Cập nhật firmware OTA**: giao diện đẩy firmware từ xa (Admin/Technician)
+- ✅ **Điều khiển giọng nói**: Voice control qua Web Speech API
+- ✅ **Phân quyền thành viên**: Owner/Admin gán quyền điều khiển/OTA
 - ✅ **Nhật ký hệ thống**: Theo dõi logs và cảnh báo
 - ✅ **Giao diện responsive**: Tương thích mobile và desktop
 - ✅ **Dark mode**: Hỗ trợ chế độ tối
@@ -105,7 +108,13 @@ src/
 │   ├── SignupPage.tsx
 │   ├── DashboardPage.tsx
 │   ├── DevicesPage.tsx
-│   └── LogsPage.tsx
+│   ├── LogsPage.tsx
+│   ├── FirmwareUpdatePage.tsx
+│   ├── VoiceControlPage.tsx
+│   └── admin/
+│       ├── AdminDashboardPage.tsx
+│       ├── UsersManagementPage.tsx
+│       └── PermissionsPage.tsx
 ├── services/         # API services
 │   └── api.ts
 ├── types/            # TypeScript types

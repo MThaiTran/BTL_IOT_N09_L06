@@ -8,8 +8,11 @@ import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import DevicesPage from './pages/DevicesPage';
 import LogsPage from './pages/LogsPage';
+import FirmwareUpdatePage from './pages/FirmwareUpdatePage';
+import VoiceControlPage from './pages/VoiceControlPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import UsersManagementPage from './pages/admin/UsersManagementPage';
+import PermissionsPage from './pages/admin/PermissionsPage';
 import Layout from './components/Layout';
 import RoleGuard from './components/guards/RoleGuard';
 import MockDataIndicator from './components/MockDataIndicator';
@@ -34,8 +37,11 @@ function RoleBasedRedirect() {
   if (userRole === UserRole.ADMIN) {
     return <Navigate to="/admin/dashboard" replace />;
   }
+  if (userRole === UserRole.HOUSE_OWNER || userRole === UserRole.GUEST || userRole === UserRole.TECHNICIAN) {
+    return <Navigate to="/dashboard" replace />;
+  }
   
-  return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/login" replace />;
 }
 
 function App() {
@@ -67,9 +73,12 @@ function App() {
         }
       >
         <Route index element={<RoleBasedRedirect />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="devices" element={<DevicesPage />} />
-        <Route path="logs" element={<LogsPage />} />
+        <Route path="dashboard" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER, UserRole.GUEST, UserRole.TECHNICIAN]}><DashboardPage /></RoleGuard>} />
+        <Route path="devices" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER, UserRole.TECHNICIAN]}><DevicesPage /></RoleGuard>} />
+        <Route path="logs" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER, UserRole.GUEST, UserRole.TECHNICIAN]}><LogsPage /></RoleGuard>} />
+        <Route path="firmware" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.TECHNICIAN]}><FirmwareUpdatePage /></RoleGuard>} />
+        <Route path="voice-control" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER, UserRole.GUEST, UserRole.TECHNICIAN]}><VoiceControlPage /></RoleGuard>} />
+        <Route path="permissions" element={<RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER]}><PermissionsPage /></RoleGuard>} />
         
         {/* Admin Routes */}
         <Route

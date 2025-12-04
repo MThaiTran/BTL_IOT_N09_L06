@@ -15,4 +15,8 @@ export class RolesService extends BaseService<Role> {
   ) {
     super(new BaseRepository<Role>(roleRepository));
   }
+
+  async findOneById(id: number): Promise<Role | null> {
+    return this.roleRepository.findOne({ where: { id } });
+  }
 }

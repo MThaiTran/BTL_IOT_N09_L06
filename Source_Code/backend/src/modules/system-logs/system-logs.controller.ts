@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { SystemLogsService } from './system-logs.service';
 import { CreateSystemLogDto } from './dto/create-system-log.dto';
@@ -21,10 +22,13 @@ import { SystemLog } from './entities/system-log.entity';
 import { RequestPermission } from 'src/common/helper/common.helper';
 import { EPermission } from 'src/common/enum/enum';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from 'src/common/guards/auth.guard';
+import { PermissionGuard } from 'src/common/guards/permission.guard';
 
 const tableName = 'SystemLog';
 @ApiBearerAuth()
 @Controller('system-logs')
+@UseGuards(AuthGuard, PermissionGuard) // Apply AuthGuard and PermissionGuard at controller level
 export class SystemLogsController {
   constructor(private readonly systemLogsService: SystemLogsService) {}
 
