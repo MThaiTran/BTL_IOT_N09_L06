@@ -33,28 +33,28 @@ export class SystemLogsController {
   constructor(private readonly systemLogsService: SystemLogsService) {}
 
   @ApiCreateOne(SystemLog, CreateSystemLogDto)
-  @RequestPermission(EPermission.CREATE_SYSTEM_LOG, tableName)
+  @RequestPermission(EPermission.ADD_ONE, tableName)
   @Post()
   create(@Body() createSystemLogDto: CreateSystemLogDto) {
     return this.systemLogsService.create(createSystemLogDto);
   }
 
   @ApiFindAll(SystemLog)
-  @RequestPermission(EPermission.VIEW_SYSTEM_LOGS, tableName)
+  @RequestPermission(EPermission.GET_ALL, tableName)
   @Get()
   findAll() {
     return this.systemLogsService.findAll();
   }
 
   @ApiFindOne(SystemLog)
-  @RequestPermission(EPermission.VIEW_SYSTEM_LOGS, tableName)
+  @RequestPermission(EPermission.GET_ONE, tableName)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.systemLogsService.findOne(+id);
   }
 
   @ApiUpdateOne(SystemLog, UpdateSystemLogDto)
-  @RequestPermission(EPermission.UPDATE_SYSTEM_LOG, tableName)
+  @RequestPermission(EPermission.EDIT_ONE, tableName)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -64,7 +64,7 @@ export class SystemLogsController {
   }
 
   @ApiDeleteOne(SystemLog)
-  @RequestPermission(EPermission.DELETE_SYSTEM_LOG, tableName)
+  @RequestPermission(EPermission.DELETE_ONE, tableName)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.systemLogsService.remove(+id);

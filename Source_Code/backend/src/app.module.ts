@@ -13,7 +13,7 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { RolePermissionModule } from './modules/role-permission/role-permission.module';
 import { MqttModule } from './mqtt/mqtt.module';
-import { FileHandlerModule } from './file-handler/file-handler.module';
+import { FileHandlerModule } from './modules/file-handler/file-handler.module';
 
 @Module({
   imports: [
@@ -32,6 +32,6 @@ import { FileHandlerModule } from './file-handler/file-handler.module';
     FileHandlerModule,
   ],
   controllers: [AppController],
-  providers: [AppService, SeedService],
+  providers: [AppService],
 })
 export class AppModule {}
