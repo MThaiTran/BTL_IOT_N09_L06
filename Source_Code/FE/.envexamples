@@ -1,0 +1,18 @@
+#Backend API Base URL and Port
+VITE_API_BASE_URL=http://26.65.195.57
+VITE_API_BASE_PORT=3000
+
+#Frontend URL
+VITE_FRONTEND_URL=http://localhost:5173
+
+VITE_USER_API_URL=/users
+VITE_ROLE_API_URL=/roles
+VITE_PERMISSION_API_URL=/permissions
+VITE_ROLE_PERMISSION_API_URL=/role-permissions
+VITE_DEVICE_API_URL=/devices
+VITE_DEVICE_TYPE_API_URL=/device-types
+VITE_SYSTEM_LOG_API_URL=/system-logs
+VITE_AUTH_API_URL=/auth
+VITE_AUTH_SIGNUP_API_URL=/auth/signup
+VITE_AUTH_SIGNIN_API_URL=/auth/signin
+VITE_AUTH_PROFILE_API_URL=/auth/profile
