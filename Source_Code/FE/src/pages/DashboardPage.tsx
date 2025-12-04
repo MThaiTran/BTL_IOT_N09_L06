@@ -1,5 +1,4 @@
 import { Navigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { devicesAPI } from '../services/api';
 import { Device, UserRole } from '../types';
 import { getCurrentUserRole } from '../utils/roles';
@@ -8,6 +7,7 @@ import DeviceControlCard from '../components/dashboard/DeviceControlCard';
 import SystemStatusCard from '../components/dashboard/SystemStatusCard';
 import ActivityChart from '../components/dashboard/ActivityChart';
 import { Zap, Wind } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 function DashboardPage() {
     // Redirect admin to admin dashboard
@@ -15,11 +15,37 @@ function DashboardPage() {
     if (userRole === UserRole.ADMIN) {
         return <Navigate to="/admin/dashboard" replace />;
     }
-    const { data: devices, isLoading } = useQuery({
-        queryKey: ['devices'],
-        queryFn: () => devicesAPI.getAll().then((res) => res.data),
-        refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
-    });
+    const [devices, setDevices] = useState<Device[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchDevices() {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const res = await devicesAPI.getAll();
+                if (!cancelled) {
+                    setDevices(res.data);
+                }
+            } catch (err: any) {
+                if (!cancelled) setError(err.message ?? "Fetch failed");
+            } finally {
+                if (!cancelled) setIsLoading(false);
+            }
+        }
+
+        fetchDevices();
+
+        const interval = setInterval(fetchDevices, 5000); // Refresh every 5 seconds
+
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
+    }, []);
 
     // Filter devices by type (assuming deviceType.name or similar)
     const sensorDevices = devices?.filter((d: Device) =>
@@ -27,12 +53,12 @@ function DashboardPage() {
         d.description?.toLowerCase().includes('temperature')
     ) || [];
 
-    const lightDevices = devices?.filter((d: Device) =>
+    const lightDevices = (Array.isArray(devices) ? devices : []).filter((d: Device) =>
         d.deviceType?.name?.toLowerCase().includes('light') ||
         d.description?.toLowerCase().includes('đèn')
     ) || [];
 
-    const fanDevices = devices?.filter((d: Device) =>
+    const fanDevices = (Array.isArray(devices) ? devices : []).filter((d: Device) =>
         d.deviceType?.name?.toLowerCase().includes('fan') ||
         d.description?.toLowerCase().includes('quạt')
     ) || [];
@@ -43,6 +69,10 @@ function DashboardPage() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             </div>
         );
+    }
+
+    if (error) {
+        return <div className="text-red-500 text-center mt-8">Error: {error}</div>;
     }
 
     return (
@@ -90,7 +120,7 @@ function DashboardPage() {
 
             {/* System Status & Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <SystemStatusCard devices={devices || []} />
+                <SystemStatusCard devices={Array.isArray(devices) ? devices : []} />
                 <div className="lg:col-span-2">
                     <ActivityChart />
                 </div>

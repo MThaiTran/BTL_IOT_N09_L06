@@ -201,13 +201,12 @@ function AdminDashboardPage() {
                     </p>
                   </div>
                   <span
-                    className={`px-2 py-1 text-xs font-semibold rounded ${
-                      log.log === "ERROR"
+                    className={`px-2 py-1 text-xs font-semibold rounded ${log.log === "ERROR"
                         ? "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400"
                         : log.log === "WARNING"
-                        ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400"
-                        : "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-                    }`}
+                          ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400"
+                          : "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                      }`}
                   >
                     {log.log}
                   </span>
