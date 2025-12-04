@@ -15,6 +15,7 @@ function DashboardPage() {
     if (userRole === UserRole.ADMIN) {
         return <Navigate to="/admin/dashboard" replace />;
     }
+    
     const [devices, setDevices] = useState<Device[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -39,11 +40,11 @@ function DashboardPage() {
 
         fetchDevices();
 
-        const interval = setInterval(fetchDevices, 5000); // Refresh every 5 seconds
+        //const interval = setInterval(fetchDevices, 5000); // Refresh every 5 seconds
 
         return () => {
             cancelled = true;
-            clearInterval(interval);
+            //clearInterval(interval);
         };
     }, []);
 

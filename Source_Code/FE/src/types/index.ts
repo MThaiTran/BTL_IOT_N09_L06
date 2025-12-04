@@ -98,8 +98,8 @@ export interface SystemLog {
 export enum UserRole {
   ADMIN = 1,
   TECHNICIAN = 2,
-  HOUSE_OWNER = 3, // Corresponds to House Owner
-  GUEST = 4, // Corresponds to Guest/Family Member
+  HOUSE_OWNER = 2, // Corresponds to House Owner
+  GUEST = 3, // Corresponds to Guest/Family Member
 }
 
 export enum ERole {
