@@ -12,6 +12,7 @@ import type {
   Role,
   CreateUserDto,
   UpdateUserDto,
+  CreateUserDevicesDto,
 } from "../types";
 import { USE_MOCK_DATA } from "../config/config";
 import {
@@ -102,17 +103,19 @@ export const devicesAPI = {
 };
 //userDevicesAPI
 export const userDevicesAPI = {
-  getOne: (id: number): Promise<{ data: Device[] }> =>
+  getOne: (id: number) =>
     USE_MOCK_DATA
       ? mockDevicesAPI.getAll()
       : api.get(`${import.meta.env.VITE_USER_DEVICE_API_URL}/${id}`),
-  
-  createOne: (data: CreateDeviceDto): Promise<{ data: Device }> =>
-    USE_MOCK_DATA
-      ? mockDevicesAPI.create(data)
-      : api.post(import.meta.env.VITE_USER_DEVICE_API_URL, data),
-};
 
+  createOne: (data: CreateUserDevicesDto) =>
+    api.post(import.meta.env.VITE_USER_DEVICE_API_URL, data),
+
+  delete: (userId: number, deviceId: number) =>
+    api.delete(
+      `${import.meta.env.VITE_USER_DEVICE_API_URL}/${userId}/${deviceId}`
+    ),
+};
 
 // Device Types API - Switch between mock and real API
 export const deviceTypesAPI = {

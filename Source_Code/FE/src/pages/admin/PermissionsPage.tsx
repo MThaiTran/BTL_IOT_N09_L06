@@ -1,8 +1,13 @@
-import { useMemo, useState, useEffect } from 'react';
-import { usersAPI, rolesAPI, devicesAPI, userDevicesAPI } from '../../services/api';
-import { Role, User, UserRole, Device } from '../../types';
-import toast from 'react-hot-toast';
-import { ShieldCheck, KeyRound, Settings2 } from 'lucide-react';
+import { useMemo, useState, useEffect } from "react";
+import {
+  usersAPI,
+  rolesAPI,
+  devicesAPI,
+  userDevicesAPI,
+} from "../../services/api";
+import { Role, User, UserRole, Device } from "../../types";
+import toast from "react-hot-toast";
+import { ShieldCheck, KeyRound, Settings2 } from "lucide-react";
 
 interface CustomPermission {
   voiceControl: boolean;
@@ -21,7 +26,8 @@ function PermissionsPage() {
   const [customPermissions, setCustomPermissions] = useState<
     Record<number, CustomPermission>
   >({});
-  const [devicePermissions, setDevicePermissions] = useState<DevicePermissionMap>({});
+  const [devicePermissions, setDevicePermissions] =
+    useState<DevicePermissionMap>({});
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -31,29 +37,21 @@ function PermissionsPage() {
       setLoading(true);
       setError(null);
       try {
-        const [uRes, rRes, dRes, udRes] = await Promise.all([
+        const [uRes, rRes, dRes] = await Promise.all([
           usersAPI.getAll(),
           rolesAPI.getAll(),
           devicesAPI.getAll(),
-          userDevicesAPI.getOne(1), // GET /user-devices
         ]);
         if (!cancelled) {
           setUsers(uRes.data);
           setRoles(rRes.data);
           setDevices(dRes.data);
-
-          // build devicePermissions map from user-devices associations
-          const map: DevicePermissionMap = {};
-          (udRes.data || []).forEach((rec: any) => {
-            const uid = rec.userId;
-            const did = rec.deviceId;
-            if (!map[uid]) map[uid] = [];
-            if (!map[uid].includes(did)) map[uid].push(did);
-          });
-          setDevicePermissions(map);
         }
       } catch (err: any) {
-        if (!cancelled) setError(err?.response?.data?.message ?? err.message ?? 'Fetch failed');
+        if (!cancelled)
+          setError(
+            err?.response?.data?.message ?? err.message ?? "Fetch failed"
+          );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -66,16 +64,29 @@ function PermissionsPage() {
     };
   }, []);
 
-  const ensureDevicePermissions = (user: User): number[] => {
+  const ensureDevicePermissions = async (user: User) => {
     if (devicePermissions[user.id]) {
       return devicePermissions[user.id];
     }
-    const defaults =
-      user.roleId === UserRole.ADMIN || user.roleId === UserRole.TECHNICIAN
-        ? devices?.map((d) => d.id) ?? []
-        : devices?.filter((d) => d.userId === user.id).map((d) => d.id) ?? [];
-    setDevicePermissions((prev) => ({ ...prev, [user.id]: defaults }));
-    return defaults;
+
+    if (user.roleId === UserRole.ADMIN || user.roleId === UserRole.TECHNICIAN) {
+      const allDeviceIds = devices?.map((d) => d.id) ?? [];
+      setDevicePermissions((prev) => ({ ...prev, [user.id]: allDeviceIds }));
+      console.log("allDeviceIds", allDeviceIds);
+      return allDeviceIds;
+    } else {
+      const userDeviceRes = await userDevicesAPI.getOne(user.id);
+      const assignedDeviceIds = userDeviceRes.data.map(
+        (ud: any) => ud.deviceId
+      );
+      console.log("userDeviceRes.data", assignedDeviceIds);
+      setDevicePermissions((prev) => ({
+        ...prev,
+        [user.id]: assignedDeviceIds,
+      }));
+      console.log("assignedDeviceIds", assignedDeviceIds);
+      return assignedDeviceIds;
+    }
   };
 
   const handleRoleChange = async (user: User, roleId: number) => {
@@ -84,7 +95,7 @@ function PermissionsPage() {
       await usersAPI.update(user.id, { roleId });
       setUsers((prev) =>
         prev
-          ? prev.map((u) => (u.id === user.id ? { ...u, roleId } as User : u))
+          ? prev.map((u) => (u.id === user.id ? ({ ...u, roleId } as User) : u))
           : prev
       );
       setDevicePermissions((prev) => {
@@ -94,9 +105,11 @@ function PermissionsPage() {
             : prev[user.id] ?? [];
         return { ...prev, [user.id]: defaults };
       });
-      toast.success('Cập nhật phân quyền thành công');
+      toast.success("Cập nhật phân quyền thành công");
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Cập nhật phân quyền thất bại');
+      toast.error(
+        err?.response?.data?.message ?? "Cập nhật phân quyền thất bại"
+      );
     }
   };
 
@@ -116,7 +129,11 @@ function PermissionsPage() {
 
   // Persist association to backend: POST /user-devices { userId, deviceId }
   // Remove association using userDevicesAPI.deleteByUserAndDevice (implement server-specific delete).
-  const toggleDevicePermission = async (userId: number, deviceId: number, checked: boolean) => {
+  const toggleDevicePermission = async (
+    userId: number,
+    deviceId: number,
+    checked: boolean
+  ) => {
     // optimistic update
     setDevicePermissions((prev) => {
       const existing = prev[userId] ?? [];
@@ -128,19 +145,22 @@ function PermissionsPage() {
 
     try {
       if (checked) {
-        await userDevicesAPI.createOne({ userId, deviceId }); // POST /user-devices
-        toast.success('Đã cấp quyền thiết bị');
+        const res1 = await userDevicesAPI.createOne({ userId, deviceId }); // POST /user-devices
+        console.log("Created user-device:", res1.data);
+        toast.success("Đã cấp quyền thiết bị");
       } else {
         // backend delete behavior may vary:
         // try to call deleteByUserAndDevice which should send userId/deviceId to delete record
-        await userDevicesAPI.deleteByUserAndDevice(userId, deviceId);
-        toast.success('Đã thu hồi quyền thiết bị');
+        const res2 = await userDevicesAPI.delete(userId, deviceId);
+        console.log("Deleted user-device:", res2.data);
+        toast.success("Đã thu hồi quyền thiết bị");
       }
     } catch (err: any) {
       // rollback on error: refetch associations or revert local state
       // simplest: refetch all user-devices
       try {
-        const udRes = await userDevicesAPI.getAll();
+        const udRes = await userDevicesAPI.getOne(userId);
+        console.log("Refetched user-devices:", udRes.data);
         const map: DevicePermissionMap = {};
         (udRes.data || []).forEach((rec: any) => {
           const uid = rec.userId;
@@ -153,23 +173,29 @@ function PermissionsPage() {
         // fallback: remove/restore single change
         setDevicePermissions((prev) => {
           const existing = prev[userId] ?? [];
-          const next = checked ? existing.filter((id) => id !== deviceId) : Array.from(new Set([...existing, deviceId]));
+          const next = checked
+            ? existing.filter((id) => id !== deviceId)
+            : Array.from(new Set([...existing, deviceId]));
           return { ...prev, [userId]: next };
         });
       }
-      toast.error(err?.response?.data?.message ?? 'Cập nhật quyền thiết bị thất bại');
+      toast.error(
+        err?.response?.data?.message ?? "Cập nhật quyền thiết bị thất bại"
+      );
     }
   };
 
-  const getAllowedDevices = (user: User): Device[] => {
-    const ids = devicePermissions[user.id] ?? ensureDevicePermissions(user);
+  const getAllowedDevices = async (user: User) => {
+    const ids =
+      devicePermissions[user.id] ?? (await ensureDevicePermissions(user));
+    console.log("Allowed device IDs for user", user.id, ":", ids);
     return devices?.filter((device) => ids.includes(device.id)) ?? [];
   };
 
   const deviceGroups = useMemo(() => {
     if (!devices) return {};
     return devices.reduce<Record<string, Device[]>>((acc, device) => {
-      const key = device.location || 'Khác';
+      const key = device.location || "Khác";
       acc[key] = acc[key] ? [...acc[key], device] : [device];
       return acc;
     }, {});
@@ -226,7 +252,10 @@ function PermissionsPage() {
                 };
 
                 return (
-                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <tr
+                    key={user.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  >
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900 dark:text-white">
                         {user.name}
@@ -236,7 +265,9 @@ function PermissionsPage() {
                     <td className="px-6 py-4">
                       <select
                         value={user.roleId}
-                        onChange={(e) => handleRoleChange(user, Number(e.target.value))}
+                        onChange={(e) =>
+                          handleRoleChange(user, Number(e.target.value))
+                        }
                         className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent text-sm"
                       >
                         {roles?.map((role: Role) => (
@@ -253,7 +284,11 @@ function PermissionsPage() {
                           className="form-checkbox h-4 w-4 text-primary-600"
                           checked={permissions.voiceControl}
                           onChange={(e) =>
-                            togglePermission(user.id, 'voiceControl', e.target.checked)
+                            togglePermission(
+                              user.id,
+                              "voiceControl",
+                              e.target.checked
+                            )
                           }
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -281,49 +316,56 @@ function PermissionsPage() {
                         </div>
                         <button
                           onClick={() =>
-                            setEditingUserId(editingUserId === user.id ? null : user.id)
+                            setEditingUserId(
+                              editingUserId === user.id ? null : user.id
+                            )
                           }
                           className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
                         >
                           <Settings2 size={14} />
-                          {editingUserId === user.id ? 'Đóng' : 'Quản lý thiết bị'}
+                          {editingUserId === user.id
+                            ? "Đóng"
+                            : "Quản lý thiết bị"}
                         </button>
                         {editingUserId === user.id && (
                           <div className="mt-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 space-y-3 max-h-60 overflow-y-auto">
-                            {Object.entries(deviceGroups).map(([location, group]) => (
-                              <div key={location}>
-                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
-                                  {location}
-                                </p>
-                                <div className="flex flex-wrap gap-3">
-                                  {group.map((device) => {
-                                    const allowed =
-                                      (devicePermissions[user.id] ??
-                                        ensureDevicePermissions(user)).includes(device.id);
-                                    return (
-                                      <label
-                                        key={device.id}
-                                        className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300"
-                                      >
-                                        <input
-                                          type="checkbox"
-                                          className="form-checkbox h-3.5 w-3.5 text-primary-600"
-                                          checked={allowed}
-                                          onChange={(e) =>
-                                            toggleDevicePermission(
-                                              user.id,
-                                              device.id,
-                                              e.target.checked
-                                            )
-                                          }
-                                        />
-                                        {device.name}
-                                      </label>
-                                    );
-                                  })}
+                            {Object.entries(deviceGroups).map(
+                              ([location, group]) => (
+                                <div key={location}>
+                                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                                    {location}
+                                  </p>
+                                  <div className="flex flex-wrap gap-3">
+                                    {group.map((device) => {
+                                      const allowed = (
+                                        devicePermissions[user.id] ??
+                                        ensureDevicePermissions(user)
+                                      ).includes(device.id);
+                                      return (
+                                        <label
+                                          key={device.id}
+                                          className="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            className="form-checkbox h-3.5 w-3.5 text-primary-600"
+                                            checked={allowed}
+                                            onChange={(e) =>
+                                              toggleDevicePermission(
+                                                user.id,
+                                                device.id,
+                                                e.target.checked
+                                              )
+                                            }
+                                          />
+                                          {device.name}
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              )
+                            )}
                           </div>
                         )}
                       </div>
@@ -360,9 +402,9 @@ function PermissionsPage() {
             </h3>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Phân quyền rõ ràng giúp đảm bảo an toàn hệ thống. Bạn có thể điều chỉnh
-            thiết bị được phép điều khiển cho từng thành viên để tránh thao tác nhầm.
-            Mọi thay đổi sẽ được ghi lại trong logs.
+            Phân quyền rõ ràng giúp đảm bảo an toàn hệ thống. Bạn có thể điều
+            chỉnh thiết bị được phép điều khiển cho từng thành viên để tránh
+            thao tác nhầm. Mọi thay đổi sẽ được ghi lại trong logs.
           </p>
         </div>
       </div>
