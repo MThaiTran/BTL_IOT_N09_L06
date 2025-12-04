@@ -8,6 +8,7 @@ import SystemStatusCard from '../components/dashboard/SystemStatusCard';
 import ActivityChart from '../components/dashboard/ActivityChart';
 import { Zap, Wind } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { LiveMonitor } from '../components/dashboard/LiveMonitor';
 
 function DashboardPage() {
     // Redirect admin to admin dashboard
@@ -88,7 +89,12 @@ function DashboardPage() {
                 </p>
             </div>
 
-            {/* Real-time Sensor Data */}
+            {/* --- PHẦN MỚI: Màn hình giám sát thời gian thực qua MQTT --- */}
+            {/* Component này sẽ hiển thị dữ liệu trực tiếp từ ESP32 */}
+            <LiveMonitor /> 
+            {/* -------------------------------------------------------- */}
+
+            {/* Real-time Sensor Data (Danh sách thiết bị từ Database) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sensorDevices.length > 0 ? (
                     sensorDevices.map((device: Device) => (
@@ -131,4 +137,3 @@ function DashboardPage() {
 }
 
 export default DashboardPage;
-

@@ -3,7 +3,8 @@ import { usersAPI, devicesAPI, systemLogsAPI } from "../../services/api";
 import { Users, Cpu, Activity, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
+// import axios from "axios"; // Bạn không dùng axios trực tiếp trong file này nên có thể bỏ
+import { LiveMonitor } from "../../components/dashboard/LiveMonitor"; // <--- 1. Import LiveMonitor
 
 function AdminDashboardPage() {
   const [users, setUsers] = useState<any>(null);
@@ -65,7 +66,7 @@ function AdminDashboardPage() {
     {
       title: "Hoạt động hôm nay",
       value:
-        (Array.isArray(logs) ? logs : []).filter((l) => {
+        (Array.isArray(logs) ? logs : []).filter((l: any) => {
           const today = new Date();
           const logDate = new Date(l.createdAt);
           return logDate.toDateString() === today.toDateString();
@@ -78,7 +79,7 @@ function AdminDashboardPage() {
       title: "Cảnh báo",
       value:
         (Array.isArray(logs) ? logs : []).filter(
-          (l) => l.log === "ERROR" || l.log === "WARNING"
+          (l: any) => l.log === "ERROR" || l.log === "WARNING"
         ).length || 0,
       icon: AlertCircle,
       color: "bg-red-500",
@@ -98,8 +99,17 @@ function AdminDashboardPage() {
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
           Quản lý và kiểm soát toàn bộ hệ thống
+          {/* <div className="mb-6">
+        <LiveMonitor />
+      </div> */}
         </p>
       </div>
+
+      {/* --- 2. THÊM LIVE MONITOR VÀO ĐÂY --- */}
+      <div className="mb-6">
+        <LiveMonitor />
+      </div>
+      {/* ------------------------------------ */}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -146,7 +156,7 @@ function AdminDashboardPage() {
           </div>
           <div className="space-y-3">
             {recentUsers.length > 0 ? (
-              recentUsers.map((user) => (
+              recentUsers.map((user: any) => (
                 <div
                   key={user.id}
                   className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
@@ -187,7 +197,7 @@ function AdminDashboardPage() {
           </div>
           <div className="space-y-3">
             {recentLogs.length > 0 ? (
-              recentLogs.map((log) => (
+              recentLogs.map((log: any) => (
                 <div
                   key={log.id}
                   className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
@@ -201,12 +211,13 @@ function AdminDashboardPage() {
                     </p>
                   </div>
                   <span
-                    className={`px-2 py-1 text-xs font-semibold rounded ${log.log === "ERROR"
+                    className={`px-2 py-1 text-xs font-semibold rounded ${
+                      log.log === "ERROR"
                         ? "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400"
                         : log.log === "WARNING"
-                          ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400"
-                          : "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-                      }`}
+                        ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400"
+                        : "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                    }`}
                   >
                     {log.log}
                   </span>

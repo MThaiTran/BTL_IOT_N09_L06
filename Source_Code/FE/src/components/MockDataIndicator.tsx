@@ -1,5 +1,5 @@
 import React from 'react';
-import { USE_MOCK_DATA } from '../config';
+import { USE_MOCK_DATA } from '../config/config';
 import { Database } from 'lucide-react';
 
 // Component to show indicator when using mock data
