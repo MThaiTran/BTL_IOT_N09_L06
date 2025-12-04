@@ -1,31 +1,49 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { authAPI } from '../services/api';
 import { setAuth } from '../utils/auth';
 import toast from 'react-hot-toast';
 import { Home, Mail, Lock } from 'lucide-react';
+import axios from 'axios';
 
 function LoginPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const loginMutation = useMutation({
-    mutationFn: (data: { email: string; password: string }) =>
-      authAPI.signin(data),
-    onSuccess: (response) => {
-      setAuth(response.data);
-      toast.success('Đăng nhập thành công!');
-      navigate('/dashboard');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Đăng nhập thất bại');
-    },
-  });
+  async function HandleSubmitCheck(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    loginMutation.mutate(formData);
+    setIsLoading(true);
+    setError(null);
+
+    console.log(formData.email + " === " + formData.password);
+
+    try {
+      const response = await axios.post(
+        "http://26.65.195.57:3000/auth/signin",
+        { email: formData.email, password: formData.password }
+      );
+      console.log("response: ", response);
+
+      const data = response.data;
+      console.log("Signin data", data);
+      if (data && data.token) {
+        setAuth(data);
+        toast.success('Đăng nhập thành công!');
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Đăng nhập thất bại');
+      toast.error(err.response?.data?.message || 'Đăng nhập thất bại');
+      console.log("loi dang nhap: ", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   return (
@@ -46,7 +64,7 @@ function LoginPage() {
             Đăng nhập
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={HandleSubmitCheck} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email
@@ -55,9 +73,10 @@ function LoginPage() {
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="email"
+                  name="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="your@email.com"
                 />
@@ -72,21 +91,24 @@ function LoginPage() {
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="password"
+                  name="password"
                   required
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+
             <button
               type="submit"
-              disabled={loginMutation.isPending}
+              disabled={isLoading}
               className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loginMutation.isPending ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
           </form>
 
