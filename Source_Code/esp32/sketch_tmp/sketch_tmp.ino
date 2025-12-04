@@ -4,21 +4,7 @@
 #include <ArduinoJson.h>
 #include "DHT.h"
 
-// #include "login_infos.h"
-
-
-
-// WiFi Credentials
-#define WIFI_SSID "PTIT_B5"
-#define WIFI_PASSWORD ""
-
-// MQTT Credentials
-#define MQTT_SERVER "29e338b948b3405391a0847c592b0174.s1.eu.hivemq.cloud"
-#define MQTT_PORT 8883
-#define MQTT_USER "ESP32Device01"
-#define MQTT_PASS "Esp3471118"
-#define MQTT_TOPIC_SENSORS "myproject/sensors"
-#define MQTT_TOPIC_RELAYS "myproject/relays"
+#include "login_infos.h"
 
 
 
