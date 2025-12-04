@@ -49,13 +49,14 @@ export class UserDevicesController {
 
   @Get(':userId')
   @ApiFindAll(UserDevice)
-  async findPermissionsByRoleId(
+  async findUserDevicesByUserId(
     @Param('userId') userId: number,
-    @Query('context') permissionContext: string,
-  ): Promise<UserDevice[] | UserDevice | null | String> {
+    // @Query('context') permissionContext: string,
+  ) {
+    console.log('Fetching user devices for userId:', userId);
     return this.userDevicesService.getUserDevicesByUserId(
       userId,
-      permissionContext,
+      // permissionContext,
     );
   }
 

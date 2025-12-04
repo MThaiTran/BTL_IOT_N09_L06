@@ -22,23 +22,24 @@ export class UserDevicesService {
 
   async getUserDevicesByUserId(
     userId: number,
-    context: string,
-  ): Promise<UserDevice[] | UserDevice | String> {
+    // context: string,
+  ) {
     const userDevices = await this.userDeviceRepository.find({
       where: { userId },
       relations: ['device'],
     });
 
-    if (context == null || context === undefined || context === '')
-      return userDevices;
+    return userDevices;
+    // if (context == null || context === undefined || context === '')
+    //   return userDevices;
 
-    const filterdPermissions = userDevices.filter(
-      (rp) => rp.device.name === context,
-    );
+    // const filterdPermissions = userDevices.filter(
+    //   (rp) => rp.device.name === context,
+    // );
 
-    if (filterdPermissions.length > 1) return 'Duplicated permissions found';
-    if (filterdPermissions.length == 0) return 'No permissions found';
-    return filterdPermissions[0];
+    // if (filterdPermissions.length > 1) return 'Duplicated permissions found';
+    // if (filterdPermissions.length == 0) return 'No permissions found';
+    // return filterdPermissions[0];
   }
 
   async getUserDeviceByIdPair(userId: number, deviceId: number) {
