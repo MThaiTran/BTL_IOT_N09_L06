@@ -26,7 +26,7 @@ export interface AuthResponse {
 export interface Device {
   id: number;
   name: string;
-  fireBasePath: string;
+  firebasePath: string;
   description: string;
   location: string;
   thresholdLow: number;
@@ -50,7 +50,7 @@ export interface DeviceType {
 
 export interface CreateDeviceDto {
   name: string;
-  fireBasePath: string;
+  firebasePath: string;
   description: string;
   location: string;
   thresholdLow: number;
@@ -58,10 +58,14 @@ export interface CreateDeviceDto {
   userId: number;
   deviceTypeId: number;
 }
+export interface CreateUserDevicesDto { 
+  userId: number;
+  deviceId: number;
+}
 
 export interface UpdateDeviceDto {
   name?: string;
-  fireBasePath?: string;
+  firebasePath?: string;
   description?: string;
   location?: string;
   thresholdLow?: number;

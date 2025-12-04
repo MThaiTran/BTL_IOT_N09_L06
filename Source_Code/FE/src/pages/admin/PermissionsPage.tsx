@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { usersAPI, rolesAPI, devicesAPI } from '../../services/api';
+import { useMemo, useState, useEffect } from 'react';
+import { usersAPI, rolesAPI, devicesAPI, userDevicesAPI } from '../../services/api';
 import { Role, User, UserRole, Device } from '../../types';
 import toast from 'react-hot-toast';
 import { ShieldCheck, KeyRound, Settings2 } from 'lucide-react';
@@ -12,21 +11,12 @@ interface CustomPermission {
 type DevicePermissionMap = Record<number, number[]>;
 
 function PermissionsPage() {
-  const queryClient = useQueryClient();
-  const { data: users } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => usersAPI.getAll().then((res) => res.data),
-  });
+  const [users, setUsers] = useState<User[] | null>(null);
+  const [roles, setRoles] = useState<Role[] | null>(null);
+  const [devices, setDevices] = useState<Device[] | null>(null);
 
-  const { data: roles } = useQuery({
-    queryKey: ['roles'],
-    queryFn: () => rolesAPI.getAll().then((res) => res.data),
-  });
-
-  const { data: devices } = useQuery({
-    queryKey: ['devices'],
-    queryFn: () => devicesAPI.getAll().then((res) => res.data),
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [customPermissions, setCustomPermissions] = useState<
     Record<number, CustomPermission>
@@ -34,15 +24,47 @@ function PermissionsPage() {
   const [devicePermissions, setDevicePermissions] = useState<DevicePermissionMap>({});
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
 
-  const updateRoleMutation = useMutation({
-    mutationFn: ({ id, roleId }: { id: number; roleId: number }) =>
-      usersAPI.update(id, { roleId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Cập nhật phân quyền thành công');
-    },
-    onError: () => toast.error('Cập nhật phân quyền thất bại'),
-  });
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchAll() {
+      setLoading(true);
+      setError(null);
+      try {
+        const [uRes, rRes, dRes, udRes] = await Promise.all([
+          usersAPI.getAll(),
+          rolesAPI.getAll(),
+          devicesAPI.getAll(),
+          userDevicesAPI.getOne(1), // GET /user-devices
+        ]);
+        if (!cancelled) {
+          setUsers(uRes.data);
+          setRoles(rRes.data);
+          setDevices(dRes.data);
+
+          // build devicePermissions map from user-devices associations
+          const map: DevicePermissionMap = {};
+          (udRes.data || []).forEach((rec: any) => {
+            const uid = rec.userId;
+            const did = rec.deviceId;
+            if (!map[uid]) map[uid] = [];
+            if (!map[uid].includes(did)) map[uid].push(did);
+          });
+          setDevicePermissions(map);
+        }
+      } catch (err: any) {
+        if (!cancelled) setError(err?.response?.data?.message ?? err.message ?? 'Fetch failed');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchAll();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const ensureDevicePermissions = (user: User): number[] => {
     if (devicePermissions[user.id]) {
@@ -56,16 +78,26 @@ function PermissionsPage() {
     return defaults;
   };
 
-  const handleRoleChange = (user: User, roleId: number) => {
+  const handleRoleChange = async (user: User, roleId: number) => {
     if (user.roleId === roleId) return;
-    updateRoleMutation.mutate({ id: user.id, roleId });
-    setDevicePermissions((prev) => {
-      const defaults =
-        roleId === UserRole.ADMIN || roleId === UserRole.TECHNICIAN
-          ? devices?.map((d) => d.id) ?? []
-          : prev[user.id] ?? [];
-      return { ...prev, [user.id]: defaults };
-    });
+    try {
+      await usersAPI.update(user.id, { roleId });
+      setUsers((prev) =>
+        prev
+          ? prev.map((u) => (u.id === user.id ? { ...u, roleId } as User : u))
+          : prev
+      );
+      setDevicePermissions((prev) => {
+        const defaults =
+          roleId === UserRole.ADMIN || roleId === UserRole.TECHNICIAN
+            ? devices?.map((d) => d.id) ?? []
+            : prev[user.id] ?? [];
+        return { ...prev, [user.id]: defaults };
+      });
+      toast.success('Cập nhật phân quyền thành công');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Cập nhật phân quyền thất bại');
+    }
   };
 
   const togglePermission = (
@@ -76,20 +108,57 @@ function PermissionsPage() {
     setCustomPermissions((prev) => ({
       ...prev,
       [userId]: {
-        voiceControl: prev[userId]?.voiceControl ?? true,
+        ...(prev[userId] ?? { voiceControl: true }),
         [key]: value,
       },
     }));
   };
 
-  const toggleDevicePermission = (userId: number, deviceId: number, checked: boolean) => {
+  // Persist association to backend: POST /user-devices { userId, deviceId }
+  // Remove association using userDevicesAPI.deleteByUserAndDevice (implement server-specific delete).
+  const toggleDevicePermission = async (userId: number, deviceId: number, checked: boolean) => {
+    // optimistic update
     setDevicePermissions((prev) => {
-      const existing = prev[userId] ?? ensureDevicePermissions({ id: userId } as User);
+      const existing = prev[userId] ?? [];
       const next = checked
         ? Array.from(new Set([...existing, deviceId]))
         : existing.filter((id) => id !== deviceId);
       return { ...prev, [userId]: next };
     });
+
+    try {
+      if (checked) {
+        await userDevicesAPI.createOne({ userId, deviceId }); // POST /user-devices
+        toast.success('Đã cấp quyền thiết bị');
+      } else {
+        // backend delete behavior may vary:
+        // try to call deleteByUserAndDevice which should send userId/deviceId to delete record
+        await userDevicesAPI.deleteByUserAndDevice(userId, deviceId);
+        toast.success('Đã thu hồi quyền thiết bị');
+      }
+    } catch (err: any) {
+      // rollback on error: refetch associations or revert local state
+      // simplest: refetch all user-devices
+      try {
+        const udRes = await userDevicesAPI.getAll();
+        const map: DevicePermissionMap = {};
+        (udRes.data || []).forEach((rec: any) => {
+          const uid = rec.userId;
+          const did = rec.deviceId;
+          if (!map[uid]) map[uid] = [];
+          if (!map[uid].includes(did)) map[uid].push(did);
+        });
+        setDevicePermissions(map);
+      } catch {
+        // fallback: remove/restore single change
+        setDevicePermissions((prev) => {
+          const existing = prev[userId] ?? [];
+          const next = checked ? existing.filter((id) => id !== deviceId) : Array.from(new Set([...existing, deviceId]));
+          return { ...prev, [userId]: next };
+        });
+      }
+      toast.error(err?.response?.data?.message ?? 'Cập nhật quyền thiết bị thất bại');
+    }
   };
 
   const getAllowedDevices = (user: User): Device[] => {
@@ -105,6 +174,18 @@ function PermissionsPage() {
       return acc;
     }, {});
   }, [devices]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-red-600">Error: {error}</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -141,8 +222,7 @@ function PermissionsPage() {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {users?.map((user) => {
                 const permissions = customPermissions[user.id] || {
-                  voiceControl:
-                    user.roleId !== UserRole.GUEST || user.roleId === UserRole.ADMIN,
+                  voiceControl: user.roleId !== UserRole.GUEST,
                 };
 
                 return (
@@ -291,4 +371,3 @@ function PermissionsPage() {
 }
 
 export default PermissionsPage;
-
