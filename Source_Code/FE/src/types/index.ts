@@ -58,7 +58,8 @@ export interface CreateDeviceDto {
   userId: number;
   deviceTypeId: number;
 }
-export interface CreateUserDevicesDto { 
+
+export interface CreateUserDevicesDto {
   userId: number;
   deviceId: number;
 }
@@ -74,11 +75,11 @@ export interface UpdateDeviceDto {
 
 // System Log Types
 export enum EDeviceLog {
-  INFO = 'INFO',
-  WARNING = 'WARNING',
-  ERROR = 'ERROR',
-  UPDATE = 'UPDATE',
-  USER_ACTION = 'USER_ACTION',
+  INFO = "INFO",
+  WARNING = "WARNING",
+  ERROR = "ERROR",
+  UPDATE = "UPDATE",
+  USER_ACTION = "USER_ACTION",
 }
 
 export interface SystemLog {
@@ -103,10 +104,10 @@ export enum UserRole {
 }
 
 export enum ERole {
-  ADMIN = 'Admin',
-  TECHNICIAN = 'Technician',
-  HOUSE_OWNER = 'House Owner',
-  GUEST = 'Guest',
+  ADMIN = "Admin",
+  TECHNICIAN = "Technician",
+  HOUSE_OWNER = "House Owner",
+  GUEST = "Guest",
 }
 
 export interface Role {
@@ -166,4 +167,3 @@ export interface SensorData {
   humidity: number;
   timestamp: Date;
 }
-

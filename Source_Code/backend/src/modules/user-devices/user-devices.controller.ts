@@ -69,7 +69,7 @@ export class UserDevicesController {
     return this.userDevicesService.getUserDeviceByIdPair(userId, deviceId);
   }
 
-  @Delete(':id')
+  @Delete(':userId/:deviceId')
   @ApiDeleteOne(UserDevice)
   async remove(
     @Param('userId') userId: number,
