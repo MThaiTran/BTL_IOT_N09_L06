@@ -17,7 +17,7 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: '',
-    fireBasePath: '',
+    firebasePath: '',
     description: '',
     location: '',
     thresholdLow: 0,
@@ -29,7 +29,7 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
     if (device) {
       setFormData({
         name: device.name,
-        fireBasePath: device.fireBasePath,
+        firebasePath: device.firebasePath,
         description: device.description,
         location: device.location,
         thresholdLow: device.thresholdLow,
@@ -122,8 +122,8 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
             <input
               type="text"
               required
-              value={formData.fireBasePath}
-              onChange={(e) => setFormData({ ...formData, fireBasePath: e.target.value })}
+              value={formData.firebasePath}
+              onChange={(e) => setFormData({ ...formData, firebasePath: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               placeholder="Ví dụ: devices/room1/sensor1"
             />

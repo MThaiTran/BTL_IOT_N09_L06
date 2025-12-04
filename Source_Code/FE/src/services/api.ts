@@ -100,6 +100,19 @@ export const devicesAPI = {
       ? mockDevicesAPI.delete(id)
       : api.delete(`${import.meta.env.VITE_DEVICE_API_URL}/${id}`),
 };
+//userDevicesAPI
+export const userDevicesAPI = {
+  getOne: (id: number): Promise<{ data: Device[] }> =>
+    USE_MOCK_DATA
+      ? mockDevicesAPI.getAll()
+      : api.get(`${import.meta.env.VITE_USER_DEVICE_API_URL}/${id}`),
+  
+  createOne: (data: CreateDeviceDto): Promise<{ data: Device }> =>
+    USE_MOCK_DATA
+      ? mockDevicesAPI.create(data)
+      : api.post(import.meta.env.VITE_USER_DEVICE_API_URL, data),
+};
+
 
 // Device Types API - Switch between mock and real API
 export const deviceTypesAPI = {

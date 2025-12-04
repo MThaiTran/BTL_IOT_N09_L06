@@ -1,9 +1,8 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { devicesAPI, deviceTypesAPI } from '../services/api';
-import { Device, DeviceType, CreateDeviceDto } from '../types';
+import { Device, DeviceType } from '../types';
 import { getAuth } from '../utils/auth';
-import { canViewAllDevices, canManageDevices, isHouseOwner, isAdmin } from '../utils/roles';
+import { canViewAllDevices, canManageDevices } from '../utils/roles';
 import { Plus, Edit, Trash2, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DeviceModal from '../components/devices/DeviceModal';
@@ -11,37 +10,71 @@ import DeviceModal from '../components/devices/DeviceModal';
 function DevicesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
-  const queryClient = useQueryClient();
+  const [allDevices, setAllDevices] = useState<Device[]>([]);
+  const [deviceTypes, setDeviceTypes] = useState<DeviceType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const { user } = getAuth();
   const canViewAll = canViewAllDevices();
   const canManipulateDevices = canManageDevices();
 
-  const { data: allDevices, isLoading } = useQuery({
-    queryKey: ['devices'],
-    queryFn: () => devicesAPI.getAll().then((res) => res.data),
-  });
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchData() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const [devicesRes, deviceTypesRes] = await Promise.all([
+          devicesAPI.getAll(),
+          deviceTypesAPI.getAll(),
+        ]);
+        if (!cancelled) {
+          setAllDevices(devicesRes.data);
+          setDeviceTypes(deviceTypesRes.data);
+        }
+        console.log(devicesRes.data, deviceTypesRes.data);
+      } catch (err: any) {
+        if (!cancelled) setError(err.message ?? "Fetch failed");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Filter devices based on role: House Owner only sees their devices
+  console.log("Current User ID:", user?.id);
   const devices = canViewAll
     ? allDevices
-    : allDevices?.filter((d) => d.userId === user?.id) || [];
+    : (Array.isArray(allDevices) ? allDevices : []).filter((d) => {
+      console.log("Device User ID:", d.userId, "Matches?", d.userId === user?.id);
+      //return d.userId === user?.idtrue; // doi chieu id user de co the xem device
+      return true;
+    }) || [];
 
-  const { data: deviceTypes } = useQuery({
-    queryKey: ['device-types'],
-    queryFn: () => deviceTypesAPI.getAll().then((res) => res.data),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => devicesAPI.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['devices'] });
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Bạn có chắc muốn xóa thiết bị này?')) {
+      return;
+    }
+    try {
+      await devicesAPI.delete(id);
       toast.success('Xóa thiết bị thành công');
-    },
-    onError: () => {
-      toast.error('Xóa thiết bị thất bại');
-    },
-  });
+      // Re-fetch data after successful deletion
+      const devicesRes = await devicesAPI.getAll();
+      setAllDevices(devicesRes.data);
+    } catch (err: any) {
+      toast.error(err.message ?? 'Xóa thiết bị thất bại');
+      setError(err.message ?? 'Xóa thiết bị thất bại');
+    } finally {
+    }
+  };
 
   const handleEdit = (device: Device) => {
     setEditingDevice(device);
@@ -57,13 +90,17 @@ function DevicesPage() {
     setIsModalOpen(false);
     setEditingDevice(null);
   };
-
+  console.log("DevicesPage - isLoading:", isLoading, "error:", error);
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center mt-8">Error: {error}</div>;
   }
 
   return (
@@ -90,19 +127,15 @@ function DevicesPage() {
       </div>
 
       {/* Devices Grid */}
-      {devices && devices.length > 0 ? (
+      {(Array.isArray(devices) && devices.length > 0) ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {devices.map((device) => (
             <DeviceCard
               key={device.id}
               device={device}
-              deviceType={deviceTypes?.find((dt) => dt.id === device.deviceTypeId)}
+              deviceType={(Array.isArray(deviceTypes) ? deviceTypes : []).find((dt) => dt.id === device.deviceTypeId)}
               onEdit={handleEdit}
-              onDelete={(id) => {
-                if (window.confirm('Bạn có chắc muốn xóa thiết bị này?')) {
-                  deleteMutation.mutate(id);
-                }
-              }}
+              onDelete={handleDelete}
               canManipulate={canManipulateDevices}
             />
           ))}
