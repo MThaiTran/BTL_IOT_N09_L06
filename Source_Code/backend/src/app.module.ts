@@ -14,6 +14,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { RolePermissionModule } from './modules/role-permission/role-permission.module';
 import { MqttModule } from './mqtt/mqtt.module';
 import { FileHandlerModule } from './modules/file-handler/file-handler.module';
+import { UserDevicesModule } from './modules/user-devices/user-devices.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { FileHandlerModule } from './modules/file-handler/file-handler.module';
     PermissionsModule,
     RolesModule,
     RolePermissionModule,
+    UserDevicesModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MqttModule,
     FileHandlerModule,

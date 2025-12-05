@@ -7,6 +7,7 @@ import { RolePermission } from 'src/modules/role-permission/entities/role-permis
 import { Device } from 'src/modules/devices/entities/device.entity';
 import { DeviceType } from 'src/modules/device-types/entities/device-type.entity';
 import { SystemLog } from 'src/modules/system-logs/entities/system-log.entity';
+import { UserDevice } from 'src/modules/user-devices/entities/user-device.entity';
 
 export const TypeOrmRootModule = TypeOrmModule.forRoot({
   type: databaseConfig.TYPE as any,
@@ -23,6 +24,7 @@ export const TypeOrmRootModule = TypeOrmModule.forRoot({
     Device,
     DeviceType,
     SystemLog,
+    UserDevice,
   ],
   synchronize: false,
   logging: NODE_ENV === 'development',
