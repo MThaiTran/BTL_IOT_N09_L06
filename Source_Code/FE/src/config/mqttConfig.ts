@@ -11,6 +11,7 @@ export const MQTT_CONFIG = {
     sensors: 'myproject/sensors',
    // controls: 'smarthome/controls/+',
     relays: 'myproject/relays'
+    
 
   }
 };
