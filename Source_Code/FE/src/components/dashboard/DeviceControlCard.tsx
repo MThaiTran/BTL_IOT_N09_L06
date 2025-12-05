@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Device } from '../../types';
-import { LucideIcon, Settings } from 'lucide-react';
+import { LucideIcon, Settings, Power } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useMqttData } from '../../services/useMqttData'; // 1. Import Hook
+import { MQTT_CONFIG } from '../../config/mqttConfig';   // 2. Import Config
 
 interface DeviceControlCardProps {
   title: string;
@@ -11,26 +13,47 @@ interface DeviceControlCardProps {
 
 function DeviceControlCard({ title, icon: Icon, devices }: DeviceControlCardProps) {
   const [autoMode, setAutoMode] = useState<Record<number, boolean>>({});
+  
+  // 3. Lấy hàm gửi lệnh và dữ liệu relay từ MQTT
+  const { relayData, sendCommand } = useMqttData();
 
-  // Mock device states - Replace with actual API calls
-  const [deviceStates, setDeviceStates] = useState<Record<number, boolean>>(
-    devices.reduce((acc, d) => ({ ...acc, [d.id]: false }), {})
-  );
+  // Hàm xác định trạng thái On/Off dựa trên dữ liệu thật từ MQTT
+  const isDeviceOn = (device: Device) => {
+    const name = device.name.toLowerCase();
+    // Logic map tên thiết bị vào Relay
+    if (name.includes('đèn') || name.includes('light')) return relayData.relay1 === 1;
+    if (name.includes('quạt') || name.includes('fan')) return relayData.relay2 === 1;
+    return false; 
+  };
 
-  const toggleDevice = (deviceId: number) => {
-    setDeviceStates((prev) => {
-      const newState = !prev[deviceId];
-      toast.success(newState ? 'Đã bật thiết bị' : 'Đã tắt thiết bị');
-      // TODO: Call API to update device state
-      return { ...prev, [deviceId]: newState };
-    });
+  const toggleDevice = (device: Device) => {
+    const name = device.name.toLowerCase();
+    let topic = '';
+    let message = '';
+    
+    // 4. Logic gửi lệnh MQTT
+    if (name.includes('đèn') || name.includes('light')) {
+      // Nếu đang bật (relay1=1) thì gửi 0 để tắt, và ngược lại
+      topic = 'smarthome/controls/light'; // Topic điều khiển đèn
+      message = relayData.relay1 === 1 ? '0' : '1';
+    } 
+    else if (name.includes('quạt') || name.includes('fan')) {
+      topic = 'smarthome/controls/fan'; // Topic điều khiển quạt
+      message = relayData.relay2 === 1 ? '0' : '1';
+    }
+
+    if (topic) {
+      sendCommand(topic, message); // Gửi lệnh đi
+      toast.success(`Đã gửi lệnh ${message === '1' ? 'Bật' : 'Tắt'} tới ${device.name}`);
+    } else {
+      toast.error('Không tìm thấy topic điều khiển cho thiết bị này');
+    }
   };
 
   const toggleAutoMode = (deviceId: number) => {
     setAutoMode((prev) => {
       const newMode = !prev[deviceId];
       toast.success(newMode ? 'Đã bật chế độ tự động' : 'Đã tắt chế độ tự động');
-      // TODO: Call API to update auto mode
       return { ...prev, [deviceId]: newMode };
     });
   };
@@ -45,7 +68,7 @@ function DeviceControlCard({ title, icon: Icon, devices }: DeviceControlCardProp
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Chưa có thiết bị nào được thêm. Vui lòng thêm thiết bị trong trang Quản lý thiết bị.
+          Chưa có thiết bị nào.
         </p>
       </div>
     );
@@ -64,7 +87,8 @@ function DeviceControlCard({ title, icon: Icon, devices }: DeviceControlCardProp
       {/* Device List */}
       <div className="space-y-4">
         {devices.map((device) => {
-          const isOn = deviceStates[device.id] || false;
+          // Lấy trạng thái thật từ hàm check
+          const isOn = isDeviceOn(device);
           const isAuto = autoMode[device.id] || false;
 
           return (
@@ -97,23 +121,25 @@ function DeviceControlCard({ title, icon: Icon, devices }: DeviceControlCardProp
               {/* Control Switch */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {isOn ? 'Đang bật' : 'Đang tắt'}
+                  {isOn ? 'Đang hoạt động' : 'Đã tắt'}
                 </span>
+                
                 <button
-                  onClick={() => toggleDevice(device.id)}
+                  onClick={() => toggleDevice(device)} // Gọi hàm điều khiển thật
                   disabled={isAuto}
                   className={`
-                    relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                    relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
                     ${isOn ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}
                     ${isAuto ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                   `}
                 >
                   <span
                     className={`
-                      inline-block h-4 w-4 transform rounded-full bg-white transition-transform
-                      ${isOn ? 'translate-x-6' : 'translate-x-1'}
+                      inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-200 ease-in-out
+                      ${isOn ? 'translate-x-7' : 'translate-x-1'}
                     `}
                   />
+                  <Power size={12} className={`absolute ${isOn ? 'left-2 text-white' : 'right-2 text-gray-400'}`} />
                 </button>
               </div>
             </div>
@@ -125,4 +151,3 @@ function DeviceControlCard({ title, icon: Icon, devices }: DeviceControlCardProp
 }
 
 export default DeviceControlCard;
-
