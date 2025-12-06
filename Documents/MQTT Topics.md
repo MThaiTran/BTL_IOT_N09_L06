@@ -15,16 +15,15 @@ Các topic và mục đích
     "motion": false
   },
   "devices": [
-    { "id": 8, "state": false },
-    { "id": 9, "state": false },
-    { "id": 10, "state": false },
-    { "id": 11, "state": false },
-    { "id": 12, "state": false },
-    { "id": 13, "state": false }
+    { "id": 8, "state": false, "autoMode": false },
+    { "id": 9, "state": false, "autoMode": false },
+    { "id": 10, "state": false, "autoMode": false },
+    { "id": 11, "state": false, "autoMode": false },
+    { "id": 12, "state": false, "autoMode": false },
+    { "id": 13, "state": false, "autoMode": false }
   ]
 }
-// Add status: "active"/ "inactive" - Dùng cho trạng thái online/ offline
-// Add autoMode: boolean
+// Add status: "active"/ "inactive" - Dùng cho trạng thái online/ offline <= Đang suy nghĩ thêm
 ```
 
 ## `esp32/subDevices`
@@ -82,12 +81,12 @@ Các tên ngưỡng mà ESP có thể đọc được:
     "motion": false
   },
   "devices": [
-    { "id": 8, "state": false },
-    { "id": 9, "state": false },
-    { "id": 10, "state": false },
-    { "id": 11, "state": false },
-    { "id": 12, "state": false },
-    { "id": 13, "state": false }
+    { "id": 8, "state": false, "autoMode": false },
+    { "id": 9, "state": false, "autoMode": false },
+    { "id": 10, "state": false, "autoMode": false },
+    { "id": 11, "state": false, "autoMode": false },
+    { "id": 12, "state": false, "autoMode": false },
+    { "id": 13, "state": false, "autoMode": false }
   ]
 }
 // Add status....
