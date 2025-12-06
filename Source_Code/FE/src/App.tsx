@@ -2,7 +2,6 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { isAuthenticated } from "./utils/auth";
 import { getCurrentUserRole } from "./utils/roles";
-import { UserRole } from "./types";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -16,6 +15,7 @@ import PermissionsPage from "./pages/admin/PermissionsPage";
 import Layout from "./components/Layout";
 import RoleGuard from "./components/guards/RoleGuard";
 import MockDataIndicator from "./components/MockDataIndicator";
+import { UserRole } from "./interfaces/enum";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!isAuthenticated()) {
@@ -37,11 +37,7 @@ function RoleBasedRedirect() {
   if (userRole === UserRole.ADMIN) {
     return <Navigate to="/admin/dashboard" replace />;
   }
-  if (
-    userRole === UserRole.HOUSE_OWNER ||
-    userRole === UserRole.GUEST ||
-    userRole === UserRole.TECHNICIAN
-  ) {
+  if (userRole === UserRole.HOUSE_OWNER || userRole === UserRole.GUEST) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -85,7 +81,6 @@ function App() {
                   UserRole.ADMIN,
                   UserRole.HOUSE_OWNER,
                   UserRole.GUEST,
-                  UserRole.TECHNICIAN,
                 ]}
               >
                 <DashboardPage />
@@ -95,13 +90,7 @@ function App() {
           <Route
             path="devices"
             element={
-              <RoleGuard
-                allowedRoles={[
-                  UserRole.ADMIN,
-                  UserRole.HOUSE_OWNER,
-                  UserRole.TECHNICIAN,
-                ]}
-              >
+              <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER]}>
                 <DevicesPage />
               </RoleGuard>
             }
@@ -109,13 +98,7 @@ function App() {
           <Route
             path="logs"
             element={
-              <RoleGuard
-                allowedRoles={[
-                  UserRole.ADMIN,
-                  UserRole.HOUSE_OWNER,
-                  UserRole.TECHNICIAN,
-                ]}
-              >
+              <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER]}>
                 <LogsPage />
               </RoleGuard>
             }
@@ -123,7 +106,7 @@ function App() {
           <Route
             path="firmware"
             element={
-              <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.TECHNICIAN]}>
+              <RoleGuard allowedRoles={[UserRole.ADMIN]}>
                 <FirmwareUpdatePage />
               </RoleGuard>
             }
@@ -131,13 +114,7 @@ function App() {
           <Route
             path="voice-control"
             element={
-              <RoleGuard
-                allowedRoles={[
-                  UserRole.ADMIN,
-                  UserRole.HOUSE_OWNER,
-                  UserRole.TECHNICIAN,
-                ]}
-              >
+              <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER]}>
                 <VoiceControlPage />
               </RoleGuard>
             }

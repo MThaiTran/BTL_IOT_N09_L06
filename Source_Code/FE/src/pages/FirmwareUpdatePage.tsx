@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { devicesAPI } from '../services/api';
-import { Device } from '../types';
-import { UploadCloud, RefreshCcw, CheckCircle2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { devicesAPI } from "../services/api";
+import { Device } from "../interfaces/entities.interface";
+import { UploadCloud, RefreshCcw, CheckCircle2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface FirmwareProgress {
   [deviceId: number]: {
-    status: 'idle' | 'updating' | 'success';
+    status: "idle" | "updating" | "success";
     percent: number;
     version: string;
   };
@@ -15,7 +15,7 @@ interface FirmwareProgress {
 
 function FirmwareUpdatePage() {
   const { data: devices, isLoading } = useQuery({
-    queryKey: ['devices'],
+    queryKey: ["devices"],
     queryFn: () => devicesAPI.getAll().then((res) => res.data),
   });
 
@@ -27,11 +27,10 @@ function FirmwareUpdatePage() {
     setProgress((prev) => ({
       ...prev,
       [device.id]: {
-        status: 'updating',
+        status: "updating",
         percent: 0,
         version:
-          prev[device.id]?.version ||
-          `v${(Math.random() * 2 + 1).toFixed(1)}`,
+          prev[device.id]?.version || `v${(Math.random() * 2 + 1).toFixed(1)}`,
       },
     }));
 
@@ -40,7 +39,7 @@ function FirmwareUpdatePage() {
         const current = prev[device.id];
         if (!current) return prev;
         const newPercent = Math.min(current.percent + Math.random() * 20, 100);
-        const status = newPercent >= 100 ? 'success' : 'updating';
+        const status = newPercent >= 100 ? "success" : "updating";
         return {
           ...prev,
           [device.id]: {
@@ -61,7 +60,7 @@ function FirmwareUpdatePage() {
             version: `v${(Math.random() * 2 + 1).toFixed(1)}`,
           }),
           percent: 100,
-          status: 'success',
+          status: "success",
         },
       }));
       toast.success(`Cập nhật OTA cho ${device.name} thành công`);
@@ -117,13 +116,16 @@ function FirmwareUpdatePage() {
                 devices.map((device) => {
                   const deviceProgress = progress[device.id];
                   return (
-                    <tr key={device.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <tr
+                      key={device.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    >
                       <td className="px-6 py-4">
                         <div className="font-medium text-gray-900 dark:text-white">
                           {device.name}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {device.deviceType?.name || 'Unknown type'}
+                          {device.deviceType?.name || "Unknown type"}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
@@ -133,12 +135,12 @@ function FirmwareUpdatePage() {
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
-                            value={deviceProgress?.version || 'v1.0.0'}
+                            value={deviceProgress?.version || "v1.0.0"}
                             onChange={(e) =>
                               setProgress((prev) => ({
                                 ...prev,
                                 [device.id]: {
-                                  status: 'idle',
+                                  status: "idle",
                                   percent: 0,
                                   version: e.target.value,
                                 },
@@ -146,7 +148,7 @@ function FirmwareUpdatePage() {
                             }
                             className="w-24 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                           />
-                          {deviceProgress?.status === 'success' && (
+                          {deviceProgress?.status === "success" && (
                             <span className="flex items-center gap-1 text-xs text-green-500">
                               <CheckCircle2 size={14} />
                               Mới nhất
@@ -159,9 +161,9 @@ function FirmwareUpdatePage() {
                           <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full ${
-                                deviceProgress?.status === 'success'
-                                  ? 'bg-green-500'
-                                  : 'bg-primary-500'
+                                deviceProgress?.status === "success"
+                                  ? "bg-green-500"
+                                  : "bg-primary-500"
                               }`}
                               style={{
                                 width: `${deviceProgress?.percent || 0}%`,
@@ -171,20 +173,20 @@ function FirmwareUpdatePage() {
                           <span className="text-xs text-gray-500">
                             {deviceProgress?.percent
                               ? `${Math.round(deviceProgress.percent)}%`
-                              : '0%'}
+                              : "0%"}
                           </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button
                           onClick={() => handleUpdate(device)}
-                          disabled={deviceProgress?.status === 'updating'}
+                          disabled={deviceProgress?.status === "updating"}
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <UploadCloud size={18} />
-                          {deviceProgress?.status === 'updating'
-                            ? 'Đang cập nhật...'
-                            : 'Cập nhật OTA'}
+                          {deviceProgress?.status === "updating"
+                            ? "Đang cập nhật..."
+                            : "Cập nhật OTA"}
                         </button>
                       </td>
                     </tr>
@@ -192,7 +194,10 @@ function FirmwareUpdatePage() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-gray-500"
+                  >
                     Chưa có thiết bị nào
                   </td>
                 </tr>
@@ -206,4 +211,3 @@ function FirmwareUpdatePage() {
 }
 
 export default FirmwareUpdatePage;
-

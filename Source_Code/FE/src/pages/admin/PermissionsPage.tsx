@@ -5,9 +5,10 @@ import {
   devicesAPI,
   userDevicesAPI,
 } from "../../services/api";
-import { Role, User, UserRole, Device } from "../../types";
 import toast from "react-hot-toast";
 import { ShieldCheck, KeyRound, Settings2 } from "lucide-react";
+import { Device, Role, User } from "../../interfaces/entities.interface";
+import { UserRole } from "../../interfaces/enum";
 
 interface CustomPermission {
   voiceControl: boolean;
@@ -69,7 +70,7 @@ function PermissionsPage() {
       return devicePermissions[user.id];
     }
 
-    if (user.roleId === UserRole.ADMIN || user.roleId === UserRole.TECHNICIAN) {
+    if (user.roleId === UserRole.ADMIN) {
       const allDeviceIds = devices?.map((d) => d.id) ?? [];
       setDevicePermissions((prev) => ({ ...prev, [user.id]: allDeviceIds }));
       console.log("allDeviceIds", allDeviceIds);
@@ -100,7 +101,7 @@ function PermissionsPage() {
       );
       setDevicePermissions((prev) => {
         const defaults =
-          roleId === UserRole.ADMIN || roleId === UserRole.TECHNICIAN
+          roleId === UserRole.ADMIN
             ? devices?.map((d) => d.id) ?? []
             : prev[user.id] ?? [];
         return { ...prev, [user.id]: defaults };

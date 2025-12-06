@@ -1,0 +1,68 @@
+export interface LoginDto {
+  email: string;
+  password: string;
+}
+
+export interface SignupDto {
+  name?: string;
+  email: string;
+  password: string;
+  passwordConfirm?: string;
+}
+
+export interface AuthResponse {
+  payload: {
+    id: number;
+    email: string;
+    name: string;
+    status: string;
+    roleId: number;
+  } | null;
+  token: string;
+}
+
+export interface CreateDeviceDto {
+  name: string;
+  firebasePath: string;
+  description: string;
+  location: string;
+  thresholdLow: number;
+  thresholdHigh: number;
+  userId: number;
+  deviceTypeId: number;
+}
+
+export interface CreateUserDevicesDto {
+  userId: number;
+  deviceId: number;
+}
+
+export interface UpdateDeviceDto {
+  name?: string;
+  firebasePath?: string;
+  description?: string;
+  location?: string;
+  thresholdLow?: number;
+  thresholdHigh?: number;
+}
+
+export interface CreateUserDto {
+  name: string;
+  email: string;
+  password: string;
+  roleId: number;
+}
+
+export interface UpdateUserDto {
+  name?: string;
+  email?: string;
+  password?: string;
+  roleId?: number;
+  status?: string;
+}
+
+export interface SensorData {
+  temperature: number;
+  humidity: number;
+  timestamp: Date;
+}

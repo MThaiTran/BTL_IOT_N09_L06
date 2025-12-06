@@ -1,10 +1,13 @@
-import { UserRole, ERole } from '../types';
-import { getAuth } from './auth';
+import { UserRole, ERole } from "../types";
+import { getAuth } from "./auth";
 
 /**
  * Check if user has a specific role
  */
-export const hasRole = (userRoleId: number | undefined, requiredRole: UserRole): boolean => {
+export const hasRole = (
+  userRoleId: number | undefined,
+  requiredRole: UserRole
+): boolean => {
   if (!userRoleId) return false;
   return userRoleId === requiredRole;
 };
@@ -12,7 +15,10 @@ export const hasRole = (userRoleId: number | undefined, requiredRole: UserRole):
 /**
  * Check if user has one of the required roles
  */
-export const hasAnyRole = (userRoleId: number | undefined, requiredRoles: UserRole[]): boolean => {
+export const hasAnyRole = (
+  userRoleId: number | undefined,
+  requiredRoles: UserRole[]
+): boolean => {
   if (!userRoleId) return false;
   return requiredRoles.includes(userRoleId as UserRole);
 };
@@ -67,7 +73,7 @@ export const getRoleName = (roleId: number): string => {
     case UserRole.GUEST:
       return ERole.GUEST;
     default:
-      return 'Unknown';
+      return "Unknown";
   }
 };
 
@@ -77,15 +83,15 @@ export const getRoleName = (roleId: number): string => {
 export const getRoleDisplayName = (roleId: number): string => {
   switch (roleId) {
     case UserRole.ADMIN:
-      return 'Quản trị viên';
+      return "Quản trị viên";
     case UserRole.TECHNICIAN:
-      return 'Kỹ thuật viên';
+      return "Kỹ thuật viên";
     case UserRole.HOUSE_OWNER:
-      return 'Chủ nhà';
+      return "Chủ nhà";
     case UserRole.GUEST:
-      return 'Thành viên gia đình';
+      return "Thành viên gia đình";
     default:
-      return 'Người dùng';
+      return "Người dùng";
   }
 };
 
@@ -102,7 +108,7 @@ export const canAccessAdmin = (): boolean => {
  */
 export const canManageDevices = (): boolean => {
   const role = getCurrentUserRole();
-  return role === UserRole.ADMIN || role === UserRole.HOUSE_OWNER || role === UserRole.TECHNICIAN;
+  return role === UserRole.ADMIN || role === UserRole.HOUSE_OWNER;
 };
 
 /**
@@ -120,4 +126,3 @@ export const canViewAllDevices = (): boolean => {
   const role = getCurrentUserRole();
   return role === UserRole.ADMIN || role === UserRole.TECHNICIAN;
 };
-

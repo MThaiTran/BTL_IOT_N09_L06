@@ -1,12 +1,23 @@
-import { useQuery } from '@tanstack/react-query';
-import { systemLogsAPI } from '../services/api';
-import { SystemLog, EDeviceLog } from '../types';
-import { AlertCircle, Info, AlertTriangle, RefreshCw, UserCog } from 'lucide-react';
-import { format } from 'date-fns';
+import { useQuery } from "@tanstack/react-query";
+import { systemLogsAPI } from "../services/api";
+import { SystemLog } from "../interfaces/entities.interface";
+import {
+  AlertCircle,
+  Info,
+  AlertTriangle,
+  RefreshCw,
+  UserCog,
+} from "lucide-react";
+import { format } from "date-fns";
+import { EDeviceLog } from "../interfaces/enum";
 
 function LogsPage() {
-  const { data: logs, isLoading, refetch } = useQuery({
-    queryKey: ['system-logs'],
+  const {
+    data: logs,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["system-logs"],
     queryFn: () => systemLogsAPI.getAll().then((res) => res.data),
     refetchInterval: 10000, // Refresh every 10 seconds
   });
@@ -29,30 +40,30 @@ function LogsPage() {
   const getLogBg = (logType: EDeviceLog) => {
     switch (logType) {
       case EDeviceLog.ERROR:
-        return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+        return "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800";
       case EDeviceLog.WARNING:
-        return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
+        return "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800";
       case EDeviceLog.UPDATE:
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
+        return "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800";
       case EDeviceLog.USER_ACTION:
-        return 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800';
+        return "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800";
       default:
-        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
+        return "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800";
     }
   };
 
   const getLogTypeLabel = (logType: EDeviceLog) => {
     switch (logType) {
       case EDeviceLog.ERROR:
-        return 'Lỗi';
+        return "Lỗi";
       case EDeviceLog.WARNING:
-        return 'Cảnh báo';
+        return "Cảnh báo";
       case EDeviceLog.UPDATE:
-        return 'Cập nhật';
+        return "Cập nhật";
       case EDeviceLog.USER_ACTION:
-        return 'Hành động người dùng';
+        return "Hành động người dùng";
       default:
-        return 'Thông tin';
+        return "Thông tin";
     }
   };
 
@@ -89,7 +100,11 @@ function LogsPage() {
       {logs && logs.length > 0 ? (
         <div className="space-y-4">
           {logs
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .sort(
+              (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+            )
             .map((log) => (
               <LogCard
                 key={log.id}
@@ -103,7 +118,9 @@ function LogsPage() {
       ) : (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
           <Info className="mx-auto text-gray-400 mb-4" size={48} />
-          <p className="text-gray-600 dark:text-gray-400">Chưa có nhật ký nào</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Chưa có nhật ký nào
+          </p>
         </div>
       )}
     </div>
@@ -121,7 +138,9 @@ function LogCard({ log, getLogIcon, getLogBg, getLogTypeLabel }: LogCardProps) {
   return (
     <div
       className={`
-        bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border ${getLogBg(log.log)}
+        bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border ${getLogBg(
+          log.log
+        )}
       `}
     >
       <div className="flex items-start gap-4">
@@ -142,7 +161,9 @@ function LogCard({ log, getLogIcon, getLogBg, getLogTypeLabel }: LogCardProps) {
               {format(new Date(log.createdAt), "dd/MM/yyyy HH:mm:ss")}
             </span>
           </div>
-          <p className="text-gray-900 dark:text-white mb-2">{log.logDescription}</p>
+          <p className="text-gray-900 dark:text-white mb-2">
+            {log.logDescription}
+          </p>
           {log.logData && (
             <details className="mt-2">
               <summary className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-gray-200">
@@ -160,4 +181,3 @@ function LogCard({ log, getLogIcon, getLogBg, getLogTypeLabel }: LogCardProps) {
 }
 
 export default LogsPage;
-

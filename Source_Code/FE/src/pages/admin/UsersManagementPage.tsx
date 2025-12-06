@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { usersAPI, rolesAPI } from '../../services/api';
-import { User, UserRole } from '../../types';
-import { Plus, Edit, Trash2, Shield, Mail } from 'lucide-react';
-import toast from 'react-hot-toast';
-import UserModal from '../../components/admin/UserModal';
-import { getRoleDisplayName } from '../../utils/roles';
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { usersAPI, rolesAPI } from "../../services/api";
+import { User } from "../../interfaces/entities.interface";
+import { Plus, Edit, Trash2, Shield, Mail } from "lucide-react";
+import toast from "react-hot-toast";
+import UserModal from "../../components/admin/UserModal";
+import { getRoleDisplayName } from "../../utils/roles";
 
 function UsersManagementPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -13,23 +13,23 @@ function UsersManagementPage() {
   const queryClient = useQueryClient();
 
   const { data: users, isLoading } = useQuery({
-    queryKey: ['users'],
+    queryKey: ["users"],
     queryFn: () => usersAPI.getAll().then((res) => res.data),
   });
 
   const { data: roles } = useQuery({
-    queryKey: ['roles'],
+    queryKey: ["roles"],
     queryFn: () => rolesAPI.getAll().then((res) => res.data),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => usersAPI.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Xóa người dùng thành công');
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Xóa người dùng thành công");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Xóa người dùng thất bại');
+      toast.error(error.response?.data?.message || "Xóa người dùng thất bại");
     },
   });
 
@@ -103,11 +103,17 @@ function UsersManagementPage() {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {users && users.length > 0 ? (
                 users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <tr
+                    key={user.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900/20 flex items-center justify-center">
-                          <Mail className="text-primary-600 dark:text-primary-400" size={20} />
+                          <Mail
+                            className="text-primary-600 dark:text-primary-400"
+                            size={20}
+                          />
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -128,16 +134,16 @@ function UsersManagementPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          user.status === 'active'
-                            ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                          user.status === "active"
+                            ? "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                            : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                         }`}
                       >
-                        {user.status === 'active' ? 'Hoạt động' : 'Vô hiệu'}
+                        {user.status === "active" ? "Hoạt động" : "Vô hiệu"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(user.createdAt).toLocaleDateString('vi-VN')}
+                      {new Date(user.createdAt).toLocaleDateString("vi-VN")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
@@ -149,7 +155,11 @@ function UsersManagementPage() {
                         </button>
                         <button
                           onClick={() => {
-                            if (window.confirm(`Bạn có chắc muốn xóa người dùng ${user.name}?`)) {
+                            if (
+                              window.confirm(
+                                `Bạn có chắc muốn xóa người dùng ${user.name}?`
+                              )
+                            ) {
                               deleteMutation.mutate(user.id);
                             }
                           }}
@@ -164,7 +174,9 @@ function UsersManagementPage() {
               ) : (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
-                    <p className="text-gray-500 dark:text-gray-400">Chưa có người dùng nào</p>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Chưa có người dùng nào
+                    </p>
                   </td>
                 </tr>
               )}
@@ -186,4 +198,3 @@ function UsersManagementPage() {
 }
 
 export default UsersManagementPage;
-
