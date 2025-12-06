@@ -1,3 +1,4 @@
+import { FileHandler } from './../../../backend/src/modules/file-handler/entities/file-handler.entity';
 import axios from "axios";
 import { USE_MOCK_DATA } from "../config/config";
 import {
@@ -88,6 +89,12 @@ export const devicesAPI = {
   update: (id: number, data: UpdateDeviceDto): Promise<{ data: Device }> =>
     api.patch(`${import.meta.env.VITE_DEVICE_API_URL}/${id}`, data),
 
+  // Update firmware OTA
+  upload: (data: FormData): Promise<{ data: Device }> =>
+    api.post(`/file-handler/upload`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
   delete: (id: number): Promise<void> =>
     api.delete(`${import.meta.env.VITE_DEVICE_API_URL}/${id}`),
 };
@@ -112,6 +119,7 @@ export const deviceTypesAPI = {
 
   getOne: (id: number): Promise<{ data: DeviceType }> =>
     api.get(`${import.meta.env.VITE_DEVICE_TYPE_API_URL}/${id}`),
+
 };
 
 // System Logs API - Switch between mock and real API
@@ -157,5 +165,11 @@ export const rolesAPI = {
   getOne: (id: number): Promise<{ data: Role }> =>
     api.get(`${import.meta.env.VITE_ROLE_API_URL}/${id}`),
 };
+export const filehandler = {
+  upload: (data: FormData): Promise<{ data: Device }> =>
+    api.post(`/file-handler/upload`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+}
 
 export default api;

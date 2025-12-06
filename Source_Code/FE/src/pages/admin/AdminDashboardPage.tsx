@@ -4,7 +4,7 @@ import { Users, Cpu, Activity, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 // import axios from "axios"; // Bạn không dùng axios trực tiếp trong file này nên có thể bỏ
-import { LiveMonitor } from "../../components/dashboard/LiveMonitor"; // <--- 1. Import LiveMonitor
+//import { LiveMonitor } from "../../components/dashboard/LiveMonitor"; // <--- 1. Import LiveMonitor
 
 function AdminDashboardPage() {
   const [users, setUsers] = useState<any>(null);
@@ -106,9 +106,9 @@ function AdminDashboardPage() {
       </div>
 
       {/* --- 2. THÊM LIVE MONITOR VÀO ĐÂY --- */}
-      <div className="mb-6">
+      {/* <div className="mb-6">
         <LiveMonitor />
-      </div>
+      </div> */}
       {/* ------------------------------------ */}
 
       {/* Stats Grid */}

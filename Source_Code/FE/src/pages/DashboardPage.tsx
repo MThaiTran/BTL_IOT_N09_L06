@@ -54,22 +54,27 @@ function DashboardPage() {
   const sensorDevices =
     devices?.filter(
       (d: Device) =>
-        d.deviceType?.name?.toLowerCase().includes("sensor") ||
+        d.name?.toLowerCase().includes("cảm biến") ||
+        d.deviceType?.name?.toLowerCase().includes("cảm biến") ||
         d.description?.toLowerCase().includes("temperature")
     ) || [];
 
   const lightDevices =
     (Array.isArray(devices) ? devices : []).filter(
       (d: Device) =>
-        d.deviceType?.name?.toLowerCase().includes("light") ||
-        d.description?.toLowerCase().includes("đèn")
+        (d.deviceType?.name?.toLowerCase().includes("light") ||
+         d.description?.toLowerCase().includes("đèn") ||
+         d.location?.toLowerCase().includes("đèn") ||
+         d.location?.toLowerCase().includes("light"))
     ) || [];
 
   const fanDevices =
     (Array.isArray(devices) ? devices : []).filter(
       (d: Device) =>
-        d.deviceType?.name?.toLowerCase().includes("fan") ||
-        d.description?.toLowerCase().includes("quạt")
+        (d.deviceType?.name?.toLowerCase().includes("fan") ||
+         d.description?.toLowerCase().includes("quạt") ||
+         d.location?.toLowerCase().includes("quạt") ||
+         d.location?.toLowerCase().includes("fan"))
     ) || [];
 
   if (isLoading) {
@@ -109,7 +114,7 @@ function DashboardPage() {
           ))
         ) : (
           <>
-            <TemperatureHumidityCard />
+           {/* // <TemperatureHumidityCard /> */}
             <TemperatureHumidityCard />
           </>
         )}
@@ -123,6 +128,7 @@ function DashboardPage() {
           icon={Zap}
           devices={lightDevices}
         />
+        
 
         {/* Fan Control */}
         <DeviceControlCard

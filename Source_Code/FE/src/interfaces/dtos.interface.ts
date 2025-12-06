@@ -44,6 +44,10 @@ export interface UpdateDeviceDto {
   location?: string;
   thresholdLow?: number;
   thresholdHigh?: number;
+  status?: number;
+  deviceTypeId?: number;
+  state: boolean;
+  autoMode: boolean;
 }
 
 export interface CreateUserDto {

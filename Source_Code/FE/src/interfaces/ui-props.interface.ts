@@ -20,6 +20,7 @@ export interface SensorCardProps {
   unit: string;
   color: "red" | "blue" | "yellow"; // Quy định màu
   icon?: React.ReactNode;
+  
 }
 
 export interface SystemStatusCardProps {
