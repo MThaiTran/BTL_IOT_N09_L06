@@ -4,7 +4,7 @@ Các topic và mục đích
 ## `/esp32/pubStatus`
 - Do ESP32 gửi đến backend
 - QoS: 0
-- Mục đích: gửi số liệu các sensor và trạng thái hoạt điều khiển tới backend, nhằm cung cấp người dùng trạng thái theo thời gian thực
+- Mục đích: gửi số liệu các sensor và trạng thái hoạt điều khiển tới backend, nhằm cung cấp người dùng trạng thái theo thời gian thực.
 - ESP32 sẽ gửi thông tin dưới dạng JSON như sau:
 
 ```
@@ -29,8 +29,8 @@ Các topic và mục đích
 - Do backend gửi đến ESP32
 - QoS: 2
 - Mục đích: 
-  - Điều khiển thủ công: gửi yêu cầu điều khiển trực tiếp đến ESP, ra lệnh điều khiển cho nó
-  - Điều khiển tự động: thay vì gửi lệnh, gửi ngưỡng kích hoạt theo các trường có sẵn, khi đó thiết bị sẽ tự động điều khiển thiết bị nếu điều kiện ngưỡng được thoả mãn
+  - Điều khiển thủ công: gửi yêu cầu điều khiển trực tiếp đến ESP, ra lệnh điều khiển cho nó.
+  - Điều khiển tự động: thay vì gửi lệnh, gửi ngưỡng kích hoạt theo các trường có sẵn, khi đó thiết bị sẽ tự động điều khiển thiết bị nếu điều kiện ngưỡng được thoả mãn.
 
 - Ở trường hợp để ESP điều khiển thiết bị tự động, ESP32 mong đọc được id thiết bị, cùng ít nhất 1 ngưỡng dưới dạng JSON như sau:
 ```
@@ -50,7 +50,7 @@ Các topic và mục đích
   "state": true // yêu cầu bật thiết bị
 }
 ```
-- Lúc này, hệ thống sẽ chuyển từ chế độ tự động sang thủ công hoàn toàn, và reset - để `NAN` cho tất cả giá trị điều khiển tự động
+- Lúc này, ESP sẽ chuyển từ chế độ điều khiển thiết bị đó từ tự động sang thủ công hoàn toàn, và reset - để `NAN` - xoá các giá trị điều khiển tự động cho thiết bị đó.
 
 Các tên ngưỡng mà ESP có thể đọc được:
 - `tempHigher` - (float) kích hoạt thiết bị khi nhiệt độ vượt ngưỡng chỉ định
@@ -87,7 +87,7 @@ Các tên ngưỡng mà ESP có thể đọc được:
 ## `esp32/pubWarnings`
 - Do ESP32 gửi đến backend
 - QoS: 2
-- Trong trường hợp có ít nhất 1 thiết bị được thiết lập điều khiển tự động theo ngưỡng đã đặt, ESP sẽ gửi thông báo đến backend nếu điều kiện hoạt động thiết bị vượt quá ngưỡng đã thiết lập
+- Trong trường hợp có ít nhất 1 thiết bị được thiết lập điều khiển tự động theo ngưỡng đã đặt, ESP sẽ gửi thông báo đến backend nếu điều kiện hoạt động thiết bị vượt quá ngưỡng đã thiết lập.
 ```
 { 
   "id": 9, 
