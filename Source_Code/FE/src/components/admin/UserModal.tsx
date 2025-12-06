@@ -1,24 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { usersAPI } from '../../services/api';
-import { User, Role, CreateUserDto, UpdateUserDto } from '../../types';
-import { X } from 'lucide-react';
-import toast from 'react-hot-toast';
-
-interface UserModalProps {
-  user: User | null;
-  roles: Role[];
-  onClose: () => void;
-}
+import React, { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { usersAPI } from "../../services/api";
+import { X } from "lucide-react";
+import toast from "react-hot-toast";
+import { UserModalProps } from "../../interfaces/ui-props.interface";
+import { CreateUserDto, UpdateUserDto } from "../../interfaces/dtos.interface";
 
 function UserModal({ user, roles, onClose }: UserModalProps) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
+    name: "",
+    email: "",
+    password: "",
     roleId: roles[0]?.id || 1,
-    status: 'active',
+    status: "active",
   });
 
   useEffect(() => {
@@ -26,7 +21,7 @@ function UserModal({ user, roles, onClose }: UserModalProps) {
       setFormData({
         name: user.name,
         email: user.email,
-        password: '',
+        password: "",
         roleId: user.roleId,
         status: user.status,
       });
@@ -36,12 +31,12 @@ function UserModal({ user, roles, onClose }: UserModalProps) {
   const createMutation = useMutation({
     mutationFn: (data: CreateUserDto) => usersAPI.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Thêm người dùng thành công');
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Thêm người dùng thành công");
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Thêm người dùng thất bại');
+      toast.error(error.response?.data?.message || "Thêm người dùng thất bại");
     },
   });
 
@@ -49,12 +44,14 @@ function UserModal({ user, roles, onClose }: UserModalProps) {
     mutationFn: ({ id, data }: { id: number; data: UpdateUserDto }) =>
       usersAPI.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Cập nhật người dùng thành công');
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Cập nhật người dùng thành công");
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Cập nhật người dùng thất bại');
+      toast.error(
+        error.response?.data?.message || "Cập nhật người dùng thất bại"
+      );
     },
   });
 
@@ -73,7 +70,7 @@ function UserModal({ user, roles, onClose }: UserModalProps) {
       updateMutation.mutate({ id: user.id, data: updateData });
     } else {
       if (!formData.password) {
-        toast.error('Vui lòng nhập mật khẩu');
+        toast.error("Vui lòng nhập mật khẩu");
         return;
       }
       createMutation.mutate({
@@ -90,7 +87,7 @@ function UserModal({ user, roles, onClose }: UserModalProps) {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {user ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'}
+            {user ? "Chỉnh sửa người dùng" : "Thêm người dùng mới"}
           </h2>
           <button
             onClick={onClose}
@@ -109,7 +106,9 @@ function UserModal({ user, roles, onClose }: UserModalProps) {
               type="text"
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
@@ -122,20 +121,24 @@ function UserModal({ user, roles, onClose }: UserModalProps) {
               type="email"
               required
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Mật khẩu {user ? '(để trống nếu không đổi)' : '*'}
+              Mật khẩu {user ? "(để trống nếu không đổi)" : "*"}
             </label>
             <input
               type="password"
               required={!user}
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
@@ -147,7 +150,9 @@ function UserModal({ user, roles, onClose }: UserModalProps) {
             <select
               required
               value={formData.roleId}
-              onChange={(e) => setFormData({ ...formData, roleId: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setFormData({ ...formData, roleId: parseInt(e.target.value) })
+              }
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               {roles.map((role) => (
@@ -165,7 +170,9 @@ function UserModal({ user, roles, onClose }: UserModalProps) {
               </label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="active">Hoạt động</option>
@@ -181,10 +188,10 @@ function UserModal({ user, roles, onClose }: UserModalProps) {
               className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {createMutation.isPending || updateMutation.isPending
-                ? 'Đang xử lý...'
+                ? "Đang xử lý..."
                 : user
-                ? 'Cập nhật'
-                : 'Thêm mới'}
+                ? "Cập nhật"
+                : "Thêm mới"}
             </button>
             <button
               type="button"
@@ -201,4 +208,3 @@ function UserModal({ user, roles, onClose }: UserModalProps) {
 }
 
 export default UserModal;
-

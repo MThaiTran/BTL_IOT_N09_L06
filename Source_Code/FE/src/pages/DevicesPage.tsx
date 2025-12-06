@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { devicesAPI, deviceTypesAPI } from '../services/api';
-import { Device, DeviceType } from '../types';
-import { getAuth } from '../utils/auth';
-import { canViewAllDevices, canManageDevices } from '../utils/roles';
-import { Plus, Edit, Trash2, Settings, Power } from 'lucide-react'; // Thêm icon Power
-import toast from 'react-hot-toast';
-import DeviceModal from '../components/devices/DeviceModal';
-import { useMqttData } from '../services/useMqttData'; // 1. Import Hook MQTT
+import { useState, useEffect } from "react";
+import { devicesAPI, deviceTypesAPI } from "../services/api";
+import { Device, DeviceType } from "../interfaces/entities.interface";
+import { getAuth } from "../utils/auth";
+import { canViewAllDevices, canManageDevices } from "../utils/roles";
+import { Plus, Edit, Trash2, Settings, Power } from "lucide-react"; // Thêm icon Power
+import toast from "react-hot-toast";
+import DeviceModal from "../components/devices/DeviceModal";
+import { useMqttData } from "../services/useMqttData"; // 1. Import Hook MQTT
 
 function DevicesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -55,21 +55,21 @@ function DevicesPage() {
   const devices = canViewAll
     ? allDevices
     : (Array.isArray(allDevices) ? allDevices : []).filter((d) => {
-      return true; // Logic filter theo user
-    }) || [];
+        return true; // Logic filter theo user
+      }) || [];
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('Bạn có chắc muốn xóa thiết bị này?')) {
+    if (!window.confirm("Bạn có chắc muốn xóa thiết bị này?")) {
       return;
     }
     try {
       await devicesAPI.delete(id);
-      toast.success('Xóa thiết bị thành công');
+      toast.success("Xóa thiết bị thành công");
       const devicesRes = await devicesAPI.getAll();
       setAllDevices(devicesRes.data);
     } catch (err: any) {
-      toast.error(err.message ?? 'Xóa thiết bị thất bại');
-      setError(err.message ?? 'Xóa thiết bị thất bại');
+      toast.error(err.message ?? "Xóa thiết bị thất bại");
+      setError(err.message ?? "Xóa thiết bị thất bại");
     }
   };
 
@@ -124,13 +124,15 @@ function DevicesPage() {
       </div>
 
       {/* Devices Grid */}
-      {(Array.isArray(devices) && devices.length > 0) ? (
+      {Array.isArray(devices) && devices.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {devices.map((device) => (
             <DeviceCard
               key={device.id}
               device={device}
-              deviceType={(Array.isArray(deviceTypes) ? deviceTypes : []).find((dt) => dt.id === device.deviceTypeId)}
+              deviceType={(Array.isArray(deviceTypes) ? deviceTypes : []).find(
+                (dt) => dt.id === device.deviceTypeId
+              )}
               onEdit={handleEdit}
               onDelete={handleDelete}
               canManipulate={canManipulateDevices}
@@ -141,7 +143,9 @@ function DevicesPage() {
       ) : (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
           <Settings className="mx-auto text-gray-400 mb-4" size={48} />
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Chưa có thiết bị nào</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Chưa có thiết bị nào
+          </p>
           {canManipulateDevices && (
             <button
               onClick={handleAdd}
@@ -173,10 +177,17 @@ interface DeviceCardProps {
   onEdit: (device: Device) => void;
   onDelete: (id: number) => void;
   canManipulate: boolean;
-  relayData: { relay1: number, relay2: number }; // Thêm kiểu dữ liệu relay
+  relayData: { relay1: number; relay2: number }; // Thêm kiểu dữ liệu relay
 }
 
-function DeviceCard({ device, deviceType, onEdit, onDelete, canManipulate, relayData }: DeviceCardProps) {
+function DeviceCard({
+  device,
+  deviceType,
+  onEdit,
+  onDelete,
+  canManipulate,
+  relayData,
+}: DeviceCardProps) {
   const isOnline = device.lastestDeviceUpdate
     ? new Date(device.lastestDeviceUpdate).getTime() > Date.now() - 60000
     : false;
@@ -185,8 +196,10 @@ function DeviceCard({ device, deviceType, onEdit, onDelete, canManipulate, relay
   const getDeviceRealStatus = () => {
     const name = device.name.toLowerCase();
     // Logic map tên -> relay
-    if (name.includes('đèn') || name.includes('light')) return relayData.relay1 === 1;
-    if (name.includes('quạt') || name.includes('fan')) return relayData.relay2 === 1;
+    if (name.includes("đèn") || name.includes("light"))
+      return relayData.relay1 === 1;
+    if (name.includes("quạt") || name.includes("fan"))
+      return relayData.relay2 === 1;
     return null; // Không phải thiết bị điều khiển (ví dụ cảm biến)
   };
 
@@ -201,45 +214,53 @@ function DeviceCard({ device, deviceType, onEdit, onDelete, canManipulate, relay
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
             {device.name}
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{device.location}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {device.location}
+          </p>
         </div>
         <div className="flex flex-col items-end gap-2">
-            {/* Chấm tròn Online/Offline (Database connection) */}
-            <div
-                className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}
-                title={isOnline ? 'Database Connected' : 'Lost Connection'}
-            />
+          {/* Chấm tròn Online/Offline (Database connection) */}
+          <div
+            className={`w-3 h-3 rounded-full ${
+              isOnline ? "bg-green-500" : "bg-gray-400"
+            }`}
+            title={isOnline ? "Database Connected" : "Lost Connection"}
+          />
         </div>
       </div>
 
       {/* 6. Hiển thị trạng thái ON/OFF thật */}
       {isOn !== null && (
-          <div className={`absolute top-6 right-6 px-2 py-1 rounded text-xs font-bold border ${
-              isOn 
-              ? 'bg-green-100 text-green-700 border-green-200' 
-              : 'bg-gray-100 text-gray-600 border-gray-200'
-          }`}>
-              {isOn ? 'ĐANG BẬT' : 'ĐANG TẮT'}
-          </div>
+        <div
+          className={`absolute top-6 right-6 px-2 py-1 rounded text-xs font-bold border ${
+            isOn
+              ? "bg-green-100 text-green-700 border-green-200"
+              : "bg-gray-100 text-gray-600 border-gray-200"
+          }`}
+        >
+          {isOn ? "ĐANG BẬT" : "ĐANG TẮT"}
+        </div>
       )}
 
       {/* Device Info */}
       <div className="space-y-2 mb-4">
         <div className="text-sm">
-          <span className="text-gray-600 dark:text-gray-400">Loại thiết bị: </span>
+          <span className="text-gray-600 dark:text-gray-400">
+            Loại thiết bị:{" "}
+          </span>
           <span className="font-medium text-gray-900 dark:text-white">
             {deviceType?.name || `ID: ${device.deviceTypeId}`}
           </span>
         </div>
-        
+
         {/* Chỉ hiện ngưỡng nếu là cảm biến */}
         {isOn === null && (
-            <div className="text-sm">
+          <div className="text-sm">
             <span className="text-gray-600 dark:text-gray-400">Ngưỡng: </span>
             <span className="font-medium text-gray-900 dark:text-white">
-                {device.thresholdLow} - {device.thresholdHigh}
+              {device.thresholdLow} - {device.thresholdHigh}
             </span>
-            </div>
+          </div>
         )}
 
         {device.description && (

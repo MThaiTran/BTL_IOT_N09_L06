@@ -1,3 +1,5 @@
+import { EDeviceLog } from "../interfaces/enum";
+
 // Auth Types
 export interface LoginDto {
   email: string;
@@ -71,15 +73,6 @@ export interface UpdateDeviceDto {
   location?: string;
   thresholdLow?: number;
   thresholdHigh?: number;
-}
-
-// System Log Types
-export enum EDeviceLog {
-  INFO = "INFO",
-  WARNING = "WARNING",
-  ERROR = "ERROR",
-  UPDATE = "UPDATE",
-  USER_ACTION = "USER_ACTION",
 }
 
 export interface SystemLog {
