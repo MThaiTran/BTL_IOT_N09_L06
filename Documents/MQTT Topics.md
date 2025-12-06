@@ -93,6 +93,5 @@ Các tên ngưỡng mà ESP có thể đọc được:
   "id": 9, 
   "threshold": "tempHigher",
   "thresholdValue": 25,
-  "temp": 27.5,
 }
 ```
