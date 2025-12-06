@@ -87,6 +87,7 @@ export const devicesAPI = {
 
   update: (id: number, data: UpdateDeviceDto): Promise<{ data: Device }> =>
     api.patch(`${import.meta.env.VITE_DEVICE_API_URL}/${id}`, data),
+  
 
   delete: (id: number): Promise<void> =>
     api.delete(`${import.meta.env.VITE_DEVICE_API_URL}/${id}`),
@@ -112,6 +113,7 @@ export const deviceTypesAPI = {
 
   getOne: (id: number): Promise<{ data: DeviceType }> =>
     api.get(`${import.meta.env.VITE_DEVICE_TYPE_API_URL}/${id}`),
+
 };
 
 // System Logs API - Switch between mock and real API

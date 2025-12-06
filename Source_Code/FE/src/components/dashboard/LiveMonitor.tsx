@@ -37,16 +37,16 @@ export const LiveMonitor = () => {
           icon={<Droplets size={24}/>} 
         />
         <SensorCard 
-          label="Ánh sáng" 
-          value={data.lux} 
-          unit="Lux" 
+          label="Chuyển động" 
+          value={data.motion ? 1 : 0}
+          unit= {data.motion ? "Chuyển động" : "Không"} 
           color="yellow" 
           icon={<Sun size={24}/>} 
         />
       </div>
 
       {/* Phần Trạng thái Relay (Nhỏ gọn phía dưới) */}
-      <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl">
+      {/* <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl">
          <div className="flex justify-between items-center">
             <span className="text-gray-600 font-medium">Đèn (Relay 1)</span>
             <span className={`px-2 py-1 rounded text-xs font-bold ${relayData.relay1 === 1 ? "bg-green-200 text-green-800" : "bg-gray-200 text-gray-600"}`}>
@@ -59,7 +59,7 @@ export const LiveMonitor = () => {
                {relayData.relay2 === 1 ? "ON" : "OFF"}
             </span>
          </div>
-      </div>
+      </div> */}
     </div>
   );
 };

@@ -8,11 +8,10 @@ export const MQTT_CONFIG = {
   password: 'WebViewer123',
   path: '/mqtt',
   topics: {
-    sensors: 'myproject/sensors',
+    sensors: 'myproject/sensors1',
    // controls: 'smarthome/controls/+',
-    relays: 'myproject/relays'
+    relays: 'myproject/relays1'
     
-
   }
 };
 //     #define MQTT_TOPIC_SENSORS "myproject/sensors"
