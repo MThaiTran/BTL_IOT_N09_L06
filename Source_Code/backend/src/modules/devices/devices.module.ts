@@ -5,9 +5,14 @@ import { Device } from './entities/device.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RolePermissionService } from '../role-permission/role-permission.service';
 import { RolePermissionModule } from '../role-permission/role-permission.module';
+import { MqttModule } from 'src/mqtt/mqtt.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Device]), RolePermissionModule],
+  imports: [
+    TypeOrmModule.forFeature([Device]),
+    RolePermissionModule,
+    MqttModule,
+  ],
   controllers: [DevicesController],
   providers: [DevicesService],
 })

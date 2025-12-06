@@ -10,5 +10,6 @@ import { RolePermissionModule } from '../role-permission/role-permission.module'
   imports: [TypeOrmModule.forFeature([SystemLog]), RolePermissionModule],
   controllers: [SystemLogsController],
   providers: [SystemLogsService],
+  exports: [SystemLogsService],
 })
 export class SystemLogsModule {}
