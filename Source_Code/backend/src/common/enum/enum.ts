@@ -1,8 +1,7 @@
 export enum UserRole {
   ADMIN = 1,
-  TECHNICIAN = 2,
-  HOUSE_OWNER = 3,
-  GUEST = 4,
+  HOUSE_OWNER = 2,
+  GUEST = 3,
 }
 
 export enum Status {
@@ -12,7 +11,6 @@ export enum Status {
 
 export enum ERole {
   ADMIN = 'Admin',
-  TECHNICIAN = 'Technician',
   HOUSE_OWNER = 'House Owner',
   GUEST = 'Guest',
 }
@@ -25,7 +23,6 @@ export enum EPermission {
   GET_ALL = 'GetAll',
   TEST = 'TestAuth',
   TEST_ADMIN = 'TestAdminAuth',
-  CREATE_EXAM_TEMPLATE = 'CreateResultFromExam',
 }
 
 export enum EDeviceUnit {

@@ -29,6 +29,12 @@ export class Device extends BaseEntity {
   @Column({ type: 'timestamp', nullable: true })
   lastestDeviceUpdate: Date | null;
 
+  @Column({ type: 'boolean', default: false })
+  autoMode: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  state: boolean;
+
   @Column({ type: 'number' })
   userId: number;
 

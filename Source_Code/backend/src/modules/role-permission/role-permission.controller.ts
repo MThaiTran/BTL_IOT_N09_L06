@@ -24,7 +24,7 @@ import {
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiBearerAuth()
-@Controller('role-permission')
+@Controller('role-permissions')
 export class RolePermissionController {
   constructor(private readonly rolePermissionService: RolePermissionService) {}
 

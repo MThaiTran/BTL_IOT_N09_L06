@@ -1,3 +1,5 @@
+import { EDeviceLog } from "../interfaces/enum";
+
 // Auth Types
 export interface LoginDto {
   email: string;
@@ -26,7 +28,7 @@ export interface AuthResponse {
 export interface Device {
   id: number;
   name: string;
-  fireBasePath: string;
+  firebasePath: string;
   description: string;
   location: string;
   thresholdLow: number;
@@ -50,7 +52,7 @@ export interface DeviceType {
 
 export interface CreateDeviceDto {
   name: string;
-  fireBasePath: string;
+  firebasePath: string;
   description: string;
   location: string;
   thresholdLow: number;
@@ -59,22 +61,18 @@ export interface CreateDeviceDto {
   deviceTypeId: number;
 }
 
+export interface CreateUserDevicesDto {
+  userId: number;
+  deviceId: number;
+}
+
 export interface UpdateDeviceDto {
   name?: string;
-  fireBasePath?: string;
+  firebasePath?: string;
   description?: string;
   location?: string;
   thresholdLow?: number;
   thresholdHigh?: number;
-}
-
-// System Log Types
-export enum EDeviceLog {
-  INFO = 'INFO',
-  WARNING = 'WARNING',
-  ERROR = 'ERROR',
-  UPDATE = 'UPDATE',
-  USER_ACTION = 'USER_ACTION',
 }
 
 export interface SystemLog {
@@ -94,15 +92,15 @@ export interface SystemLog {
 export enum UserRole {
   ADMIN = 1,
   TECHNICIAN = 2,
-  HOUSE_OWNER = 3, // Corresponds to House Owner
-  GUEST = 4, // Corresponds to Guest/Family Member
+  HOUSE_OWNER = 2, // Corresponds to House Owner
+  GUEST = 3, // Corresponds to Guest/Family Member
 }
 
 export enum ERole {
-  ADMIN = 'Admin',
-  TECHNICIAN = 'Technician',
-  HOUSE_OWNER = 'House Owner',
-  GUEST = 'Guest',
+  ADMIN = "Admin",
+  TECHNICIAN = "Technician",
+  HOUSE_OWNER = "House Owner",
+  GUEST = "Guest",
 }
 
 export interface Role {
@@ -162,4 +160,3 @@ export interface SensorData {
   humidity: number;
   timestamp: Date;
 }
-

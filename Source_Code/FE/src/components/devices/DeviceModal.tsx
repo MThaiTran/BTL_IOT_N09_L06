@@ -1,25 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { devicesAPI } from '../../services/api';
-import { Device, DeviceType, CreateDeviceDto, UpdateDeviceDto } from '../../types';
-import { X } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { getAuth } from '../../utils/auth';
-
-interface DeviceModalProps {
-  device: Device | null;
-  deviceTypes: DeviceType[];
-  onClose: () => void;
-}
+import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { devicesAPI } from "../../services/api";
+import { X } from "lucide-react";
+import toast from "react-hot-toast";
+import { getAuth } from "../../utils/auth";
+import { DeviceModalProps } from "../../interfaces/ui-props.interface";
+import {
+  CreateDeviceDto,
+  UpdateDeviceDto,
+} from "../../interfaces/dtos.interface";
 
 function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
   const { user } = getAuth();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
-    name: '',
-    fireBasePath: '',
-    description: '',
-    location: '',
+    name: "",
+    firebasePath: "",
+    description: "",
+    location: "",
     thresholdLow: 0,
     thresholdHigh: 100,
     deviceTypeId: deviceTypes[0]?.id || 0,
@@ -29,7 +27,7 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
     if (device) {
       setFormData({
         name: device.name,
-        fireBasePath: device.fireBasePath,
+        firebasePath: device.firebasePath,
         description: device.description,
         location: device.location,
         thresholdLow: device.thresholdLow,
@@ -42,12 +40,12 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
   const createMutation = useMutation({
     mutationFn: (data: CreateDeviceDto) => devicesAPI.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['devices'] });
-      toast.success('Thêm thiết bị thành công');
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast.success("Thêm thiết bị thành công");
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Thêm thiết bị thất bại');
+      toast.error(error.response?.data?.message || "Thêm thiết bị thất bại");
     },
   });
 
@@ -55,12 +53,14 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
     mutationFn: ({ id, data }: { id: number; data: UpdateDeviceDto }) =>
       devicesAPI.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['devices'] });
-      toast.success('Cập nhật thiết bị thành công');
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast.success("Cập nhật thiết bị thành công");
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Cập nhật thiết bị thất bại');
+      toast.error(
+        error.response?.data?.message || "Cập nhật thiết bị thất bại"
+      );
     },
   });
 
@@ -73,7 +73,7 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
       });
     } else {
       if (!user?.id) {
-        toast.error('Vui lòng đăng nhập lại');
+        toast.error("Vui lòng đăng nhập lại");
         return;
       }
       createMutation.mutate({
@@ -89,7 +89,7 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {device ? 'Chỉnh sửa thiết bị' : 'Thêm thiết bị mới'}
+            {device ? "Chỉnh sửa thiết bị" : "Thêm thiết bị mới"}
           </h2>
           <button
             onClick={onClose}
@@ -109,7 +109,9 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
               type="text"
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               placeholder="Ví dụ: Đèn phòng khách"
             />
@@ -122,8 +124,10 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
             <input
               type="text"
               required
-              value={formData.fireBasePath}
-              onChange={(e) => setFormData({ ...formData, fireBasePath: e.target.value })}
+              value={formData.firebasePath}
+              onChange={(e) =>
+                setFormData({ ...formData, firebasePath: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               placeholder="Ví dụ: devices/room1/sensor1"
             />
@@ -137,7 +141,9 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
               type="text"
               required
               value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, location: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               placeholder="Ví dụ: Phòng khách"
             />
@@ -150,7 +156,12 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
             <select
               required
               value={formData.deviceTypeId}
-              onChange={(e) => setFormData({ ...formData, deviceTypeId: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  deviceTypeId: parseInt(e.target.value),
+                })
+              }
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               {deviceTypes.map((dt) => (
@@ -172,7 +183,10 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
                 required
                 value={formData.thresholdLow}
                 onChange={(e) =>
-                  setFormData({ ...formData, thresholdLow: parseFloat(e.target.value) })
+                  setFormData({
+                    ...formData,
+                    thresholdLow: parseFloat(e.target.value),
+                  })
                 }
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
@@ -187,7 +201,10 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
                 required
                 value={formData.thresholdHigh}
                 onChange={(e) =>
-                  setFormData({ ...formData, thresholdHigh: parseFloat(e.target.value) })
+                  setFormData({
+                    ...formData,
+                    thresholdHigh: parseFloat(e.target.value),
+                  })
                 }
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
@@ -200,7 +217,9 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               rows={3}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               placeholder="Mô tả thiết bị..."
@@ -215,10 +234,10 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
               className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {createMutation.isPending || updateMutation.isPending
-                ? 'Đang xử lý...'
+                ? "Đang xử lý..."
                 : device
-                ? 'Cập nhật'
-                : 'Thêm mới'}
+                ? "Cập nhật"
+                : "Thêm mới"}
             </button>
             <button
               type="button"
@@ -235,4 +254,3 @@ function DeviceModal({ device, deviceTypes, onClose }: DeviceModalProps) {
 }
 
 export default DeviceModal;
-

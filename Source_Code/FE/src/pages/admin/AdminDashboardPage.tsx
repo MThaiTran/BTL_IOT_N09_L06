@@ -1,56 +1,89 @@
-import { useQuery } from '@tanstack/react-query';
-import { usersAPI, devicesAPI, systemLogsAPI } from '../../services/api';
-import { Users, Cpu, Activity, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useQuery } from "@tanstack/react-query";
+import { usersAPI, devicesAPI, systemLogsAPI } from "../../services/api";
+import { Users, Cpu, Activity, AlertCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+// import axios from "axios"; // Bạn không dùng axios trực tiếp trong file này nên có thể bỏ
+//import { LiveMonitor } from "../../components/dashboard/LiveMonitor"; // <--- 1. Import LiveMonitor
 
 function AdminDashboardPage() {
-  const { data: users } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => usersAPI.getAll().then((res) => res.data),
-  });
+  const [users, setUsers] = useState<any>(null);
+  const [devices, setDevices] = useState<any>(null);
+  const [logs, setLogs] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const { data: devices } = useQuery({
-    queryKey: ['devices'],
-    queryFn: () => devicesAPI.getAll().then((res) => res.data),
-  });
+  useEffect(() => {
+    let cancelled = false;
 
-  const { data: logs } = useQuery({
-    queryKey: ['system-logs'],
-    queryFn: () => systemLogsAPI.getAll().then((res) => res.data),
-  });
+    async function fetchAll() {
+      setLoading(true);
+      setError(null);
+      try {
+        const [uRes, dRes, lRes] = await Promise.all([
+          usersAPI.getAll(),
+          devicesAPI.getAll(),
+          systemLogsAPI.getAll(),
+        ]);
+        if (!cancelled) {
+          setUsers(uRes.data);
+          setDevices(dRes.data);
+          setLogs(lRes.data);
+        }
+        console.log(uRes.data, dRes, lRes);
+      } catch (err: any) {
+        if (!cancelled) setError(err.message ?? "Fetch failed");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchAll();
+
+    return () => {
+      cancelled = true; // tránh setState trên component đã unmount
+    };
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   const stats = [
     {
-      title: 'Tổng Người dùng',
+      title: "Tổng Người dùng",
       value: users?.length || 0,
       icon: Users,
-      color: 'bg-blue-500',
-      link: '/admin/users',
+      color: "bg-blue-500",
+      link: "/admin/users",
     },
     {
-      title: 'Tổng Thiết bị',
+      title: "Tổng Thiết bị",
       value: devices?.length || 0,
       icon: Cpu,
-      color: 'bg-green-500',
-      link: '/devices',
+      color: "bg-green-500",
+      link: "/devices",
     },
     {
-      title: 'Hoạt động hôm nay',
-      value: (Array.isArray(logs) ? logs : []).filter((l) => {
-        const today = new Date();
-        const logDate = new Date(l.createdAt);
-        return logDate.toDateString() === today.toDateString();
-      }).length || 0,
+      title: "Hoạt động hôm nay",
+      value:
+        (Array.isArray(logs) ? logs : []).filter((l: any) => {
+          const today = new Date();
+          const logDate = new Date(l.createdAt);
+          return logDate.toDateString() === today.toDateString();
+        }).length || 0,
       icon: Activity,
-      color: 'bg-purple-500',
-      link: '/logs',
+      color: "bg-purple-500",
+      link: "/logs",
     },
     {
-      title: 'Cảnh báo',
-      value: (Array.isArray(logs) ? logs : []).filter((l) => l.log === 'ERROR' || l.log === 'WARNING').length || 0,
+      title: "Cảnh báo",
+      value:
+        (Array.isArray(logs) ? logs : []).filter(
+          (l: any) => l.log === "ERROR" || l.log === "WARNING"
+        ).length || 0,
       icon: AlertCircle,
-      color: 'bg-red-500',
-      link: '/logs',
+      color: "bg-red-500",
+      link: "/logs",
     },
   ];
 
@@ -66,8 +99,17 @@ function AdminDashboardPage() {
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
           Quản lý và kiểm soát toàn bộ hệ thống
+          {/* <div className="mb-6">
+        <LiveMonitor />
+      </div> */}
         </p>
       </div>
+
+      {/* --- 2. THÊM LIVE MONITOR VÀO ĐÂY --- */}
+      {/* <div className="mb-6">
+        <LiveMonitor />
+      </div> */}
+      {/* ------------------------------------ */}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -114,7 +156,7 @@ function AdminDashboardPage() {
           </div>
           <div className="space-y-3">
             {recentUsers.length > 0 ? (
-              recentUsers.map((user) => (
+              recentUsers.map((user: any) => (
                 <div
                   key={user.id}
                   className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
@@ -128,7 +170,7 @@ function AdminDashboardPage() {
                     </p>
                   </div>
                   <span className="px-2 py-1 text-xs font-semibold bg-primary-100 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded">
-                    {user.role?.name || 'User'}
+                    {user.role?.name || "User"}
                   </span>
                 </div>
               ))
@@ -155,7 +197,7 @@ function AdminDashboardPage() {
           </div>
           <div className="space-y-3">
             {recentLogs.length > 0 ? (
-              recentLogs.map((log) => (
+              recentLogs.map((log: any) => (
                 <div
                   key={log.id}
                   className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
@@ -165,16 +207,17 @@ function AdminDashboardPage() {
                       {log.logDescription}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {new Date(log.createdAt).toLocaleString('vi-VN')}
+                      {new Date(log.createdAt).toLocaleString("vi-VN")}
                     </p>
                   </div>
                   <span
-                    className={`px-2 py-1 text-xs font-semibold rounded ${log.log === 'ERROR'
-                      ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                      : log.log === 'WARNING'
-                        ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400'
-                        : 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                      }`}
+                    className={`px-2 py-1 text-xs font-semibold rounded ${
+                      log.log === "ERROR"
+                        ? "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+                        : log.log === "WARNING"
+                        ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400"
+                        : "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                    }`}
                   >
                     {log.log}
                   </span>
@@ -193,4 +236,3 @@ function AdminDashboardPage() {
 }
 
 export default AdminDashboardPage;
-

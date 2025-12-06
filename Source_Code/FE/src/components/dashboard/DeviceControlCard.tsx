@@ -1,119 +1,148 @@
-import { useState } from 'react';
-import { Device } from '../../types';
-import { LucideIcon, Settings } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { useMqttData } from "../../services/useMqttData";
+import { devicesAPI } from "../../services/api";
+import { DeviceControlCardProps } from "../../interfaces/ui-props.interface";
+import { Device } from "../../interfaces/entities.interface";
 
-interface DeviceControlCardProps {
-  title: string;
-  icon: LucideIcon;
-  devices: Device[];
-}
-
-function DeviceControlCard({ title, icon: Icon, devices }: DeviceControlCardProps) {
+function DeviceControlCard({
+  title,
+  icon: Icon,
+  devices,
+}: DeviceControlCardProps) {
+  // local optimistic status per device and loading flags
   const [autoMode, setAutoMode] = useState<Record<number, boolean>>({});
+  const [localStatus, setLocalStatus] = useState<Record<number, number>>({});
+  const [loadingDevices, setLoadingDevices] = useState<Record<number, boolean>>({});
 
-  // Mock device states - Replace with actual API calls
-  const [deviceStates, setDeviceStates] = useState<Record<number, boolean>>(
-    devices.reduce((acc, d) => ({ ...acc, [d.id]: false }), {})
-  );
+  //const { relayData, sendCommand } = useMqttData();
 
-  const toggleDevice = (deviceId: number) => {
-    setDeviceStates((prev) => {
-      const newState = !prev[deviceId];
-      toast.success(newState ? 'Đã bật thiết bị' : 'Đã tắt thiết bị');
-      // TODO: Call API to update device state
-      return { ...prev, [deviceId]: newState };
-    });
+  const getDeviceLabel = (device: Device) =>
+    device.location ?? device.description ?? device.name;
+
+  // Use device.status (fallback to localStatus for optimistic update)
+  const isDeviceOn = (device: Device) => {
+    const status = localStatus[device.id] ?? (device as any).status ?? 0;
+    return Number(status) === 1;
   };
 
-  const toggleAutoMode = (deviceId: number) => {
-    setAutoMode((prev) => {
-      const newMode = !prev[deviceId];
-      toast.success(newMode ? 'Đã bật chế độ tự động' : 'Đã tắt chế độ tự động');
-      // TODO: Call API to update auto mode
-      return { ...prev, [deviceId]: newMode };
-    });
+  // helper: xác định thiết bị là đèn
+  const isLightDevice = (device: Device) => {
+    const check = (
+      device.deviceType?.name ||
+      device.name ||
+      device.description ||
+      device.location ||
+      ""
+    ).toLowerCase();
+    return check.includes("đèn") || check.includes("light");
   };
 
-  if (devices.length === 0) {
+  // chỉ cho Auto mode khi device là đèn và location = "cầu thang"
+  const canAutoMode = (device: Device) =>
+    isLightDevice(device) && (device.location ?? "").toLowerCase() === "cầu thang";
+
+  const toggleDevice = async (device: Device) => {
+    // determine current and next status
+    const current = localStatus[device.id] ?? (device as any).status ?? 0;
+    const next = current === 1 ? 0 : 1;
+    
+    // optimistic update
+    setLocalStatus((prev) => ({ ...prev, [device.id]: next }));
+    setLoadingDevices((prev) => ({ ...prev, [device.id]: true }));
+
+    try {
+      // call backend to update state; backend will handle MQTT publish
+      await devicesAPI.update(device.id, { 
+        state: Boolean(next),
+        autoMode: autoMode[device.id] ?? false
+      });
+      toast.success("Yêu cầu gửi đến hệ thống");
+      console.info("Device status updated:", device.id, "state:", Boolean(next));
+    } catch (err: any) {
+      // rollback on error
+      setLocalStatus((prev) => ({ ...prev, [device.id]: current }));
+      console.error("Update device failed:", err);
+      toast.error(err?.response?.data?.message ?? "Gửi trạng thái thất bại");
+    } finally {
+      setLoadingDevices((prev) => ({ ...prev, [device.id]: false }));
+    }
+  };
+
+  const toggleAutoMode = async (deviceId: number) => {
+    // không cho toggle nếu device không đủ điều kiện
+    const dev = devices.find((d) => d.id === deviceId);
+    if (!dev || !canAutoMode(dev)) return;
+
+    // optimistic update
+    const newAutoMode = !autoMode[deviceId];
+    setAutoMode((prev) => ({ ...prev, [deviceId]: newAutoMode }));
+    setLoadingDevices((prev) => ({ ...prev, [deviceId]: true }));
+
+    try {
+      // send autoMode status to backend
+      await devicesAPI.update(deviceId, {
+        autoMode: newAutoMode,
+        state: isDeviceOn(dev)
+      });
+      toast.success(`Chế độ ${newAutoMode ? 'tự động' : 'thủ công'} được bật`);
+      console.info("AutoMode toggled for device:", deviceId, "autoMode:", newAutoMode);
+    } catch (err: any) {
+      // rollback on error
+      setAutoMode((prev) => ({ ...prev, [deviceId]: !newAutoMode }));
+      console.error("Update autoMode failed:", err);
+      toast.error(err?.response?.data?.message ?? "Cập nhật chế độ thất bại");
+    } finally {
+      setLoadingDevices((prev) => ({ ...prev, [deviceId]: false }));
+    }
+  };
+
+  if (!devices || devices.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
-            <Icon className="text-primary-600 dark:text-primary-400" size={24} />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
-        </div>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Chưa có thiết bị nào được thêm. Vui lòng thêm thiết bị trong trang Quản lý thiết bị.
-        </p>
+        <div className="text-sm text-gray-500">Không có thiết bị</div>
       </div>
     );
   }
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
-          <Icon className="text-primary-600 dark:text-primary-400" size={24} />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          {Icon && <Icon className="text-primary-600" />}
+          <h3 className="text-lg font-semibold">{title}</h3>
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
       </div>
 
-      {/* Device List */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {devices.map((device) => {
-          const isOn = deviceStates[device.id] || false;
-          const isAuto = autoMode[device.id] || false;
-
+          const on = isDeviceOn(device);
+          const label = getDeviceLabel(device);
           return (
-            <div
-              key={device.id}
-              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-300 dark:hover:border-primary-700 transition-colors"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white">{device.name}</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{device.location}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toggleAutoMode(device.id)}
-                    className={`
-                      px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
-                      ${isAuto
-                        ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                      }
-                    `}
-                  >
-                    <Settings size={14} className="inline mr-1" />
-                    {isAuto ? 'Tự động' : 'Thủ công'}
-                  </button>
-                </div>
+            <div key={device.id} className="flex items-center justify-between">
+              <div>
+                <div className="font-medium">{device.name}</div>
+                <div className="text-xs text-gray-500">{label}</div>
               </div>
 
-              {/* Control Switch */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {isOn ? 'Đang bật' : 'Đang tắt'}
-                </span>
+              <div className="flex items-center gap-3">
+                {canAutoMode(device) && (
+                  <button
+                    onClick={() => toggleAutoMode(device.id)}
+                    className="text-xs px-2 py-1 border rounded"
+                  >
+                    {autoMode[device.id] ? "Auto" : "Manual"}
+                  </button>
+                )}
+
                 <button
-                  onClick={() => toggleDevice(device.id)}
-                  disabled={isAuto}
-                  className={`
-                    relative inline-flex h-6 w-11 items-center rounded-full transition-colors
-                    ${isOn ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}
-                    ${isAuto ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                  `}
+                  onClick={() => toggleDevice(device)}
+                  disabled={autoMode[device.id] || loadingDevices[device.id]}
+                  className={`px-3 py-1 rounded ${
+                    on ? "bg-green-500 text-white" : "bg-gray-200 dark:bg-gray-700"
+                  }`}
                 >
-                  <span
-                    className={`
-                      inline-block h-4 w-4 transform rounded-full bg-white transition-transform
-                      ${isOn ? 'translate-x-6' : 'translate-x-1'}
-                    `}
-                  />
+                  {loadingDevices[device.id] ? "..." : on ? "BẬT" : "TẮT"}
                 </button>
               </div>
             </div>
@@ -125,4 +154,3 @@ function DeviceControlCard({ title, icon: Icon, devices }: DeviceControlCardProp
 }
 
 export default DeviceControlCard;
-

@@ -21,7 +21,7 @@ function LoginPage() {
 
     try {
       const response = await axios.post(
-        "http://26.65.195.57:3000/auth/signin",
+       " http://26.65.195.57:3000/auth/signin",
         { email: formData.email, password: formData.password }
       );
       console.log("response: ", response);

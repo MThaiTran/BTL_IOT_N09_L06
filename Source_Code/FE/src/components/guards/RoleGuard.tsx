@@ -1,18 +1,16 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { UserRole } from '../../types';
-import { getCurrentUserRole } from '../../utils/roles';
-
-interface RoleGuardProps {
-  children: React.ReactNode;
-  allowedRoles: UserRole[];
-  redirectTo?: string;
-}
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { getCurrentUserRole } from "../../utils/roles";
+import { RoleGuardProps } from "../../interfaces/ui-props.interface";
 
 /**
  * Guard component to protect routes based on user roles
  */
-function RoleGuard({ children, allowedRoles, redirectTo = '/dashboard' }: RoleGuardProps) {
+function RoleGuard({
+  children,
+  allowedRoles,
+  redirectTo = "/dashboard",
+}: RoleGuardProps) {
   const userRole = getCurrentUserRole();
 
   if (!userRole || !allowedRoles.includes(userRole)) {
@@ -23,4 +21,3 @@ function RoleGuard({ children, allowedRoles, redirectTo = '/dashboard' }: RoleGu
 }
 
 export default RoleGuard;
-
