@@ -17,8 +17,8 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   hashPassword: string;
 
-  @Column({ type: 'int', nullable: true, default: UserRole.HOUSE_OWNER })
-  roleId: UserRole | number = UserRole.HOUSE_OWNER;
+  @Column({ type: 'int', nullable: true, default: UserRole.GUEST })
+  roleId: UserRole | number = UserRole.GUEST;
 
   @ManyToOne(() => Role, (role) => role.users, { nullable: true })
   role: Role;
