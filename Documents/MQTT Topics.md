@@ -23,6 +23,8 @@ Các topic và mục đích
     { "id": 13, "state": false }
   ]
 }
+// Add status: "active"/ "inactive" - Dùng cho trạng thái online/ offline
+// Add autoMode: boolean
 ```
 
 ## `esp32/subDevices`
@@ -39,6 +41,12 @@ Các topic và mục đích
   "tempHigher": 35,
   "motionOn": true
 }
+// Expected JSON:
+id
+min(1,6 truong)
+state
+status
+autoMode
 ```
 - Lúc này, ESP sẽ thiết lập các ngưỡng như yêu cầu, các ngưỡng mà không được chỉ định đều sẽ được bỏ qua, ESP32 lưu giá trị biến là `NAN`.
 
@@ -82,6 +90,7 @@ Các tên ngưỡng mà ESP có thể đọc được:
     { "id": 13, "state": false }
   ]
 }
+// Add status....
 ```
 
 ## `esp32/pubWarnings`
@@ -93,5 +102,6 @@ Các tên ngưỡng mà ESP có thể đọc được:
   "id": 9, 
   "threshold": "tempHigher",
   "thresholdValue": 25,
+  "value": 27
 }
 ```
