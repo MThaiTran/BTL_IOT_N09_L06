@@ -1,11 +1,14 @@
 // src/config/mqttConfig.ts
 // npm i mqtt
 export const MQTT_CONFIG = {
-  host: '29e338b948b3405391a0847c592b0174.s1.eu.hivemq.cloud',
+  // real host: '29e338b948b3405391a0847c592b0174.s1.eu.hivemq.cloud',
+  host: '37908302bb4f49caace8c0d5a5c6b140.s1.eu.hivemq.cloud',
   port: 8884, // Port WSS
   protocol: 'wss' as const, // 'wss' cho bảo mật, 'ws' cho thường
-  username: 'WebViewer',
-  password: 'WebViewer123',
+  // real username: 'WebViewer',
+  // password: 'WebViewer123',
+  username: 'smart-home-iot',
+  password: 'password123A',
   path: '/mqtt',
   topics: {
     sensors: 'myproject/sensors1',

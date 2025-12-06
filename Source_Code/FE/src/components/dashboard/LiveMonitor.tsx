@@ -1,7 +1,7 @@
 // src/components/dashboard/LiveMonitor.tsx
 import { useMqttData } from '../../services/useMqttData';
 import { SensorCard } from './SensorCard';
-import { Thermometer, Droplets, Sun, Zap } from 'lucide-react';
+import { Thermometer, Droplets, Zap, AlertCircle } from 'lucide-react';
 
 export const LiveMonitor = () => {
   const { data, relayData, status } = useMqttData();
@@ -37,11 +37,11 @@ export const LiveMonitor = () => {
           icon={<Droplets size={24}/>} 
         />
         <SensorCard 
-          label="Chuyển động" 
-          value={data.motion ? 1 : 0}
-          unit= {data.motion ? "Chuyển động" : "Không"} 
-          color="yellow" 
-          icon={<Sun size={24}/>} 
+          label="Cảm biến chuyển động" 
+          value={data.motion ? "Có" : "Không"}
+          unit="" 
+          color={data.motion ? "yellow" : "blue"} 
+          icon={<AlertCircle size={24}/>} 
         />
       </div>
 
