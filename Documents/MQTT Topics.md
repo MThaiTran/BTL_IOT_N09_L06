@@ -104,3 +104,12 @@ Các tên ngưỡng mà ESP có thể đọc được:
   "value": 27
 }
 ```
+
+## `esp32/availability`
+- Do ESP32 gửi đến backend ngay khi thiết lập kết nối tới MQTT.
+- QoS: 1
+- Nếu thiết bị offline trong trường hợp bất ngờ (mất mạng, mất điện, etc..), MQTT broker sẽ dựa vào di chúc đính kèm ở yêu cầu kết nối ban đầu, để gửi thông báo đến các client là đã mất kết nối
+- Respond của topic này cũng sẽ là JSON (biết là không cần phải là JSON, chỉ là để đồng bộ mấy cái kia thôi)
+```
+{ availability: false } // false = đã ngắt kết nối
+```
