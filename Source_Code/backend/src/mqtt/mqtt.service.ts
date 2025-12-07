@@ -7,6 +7,7 @@ import { SystemLogsService } from 'src/modules/system-logs/system-logs.service';
 import { EDeviceLog } from 'src/common/enum/enum';
 import { DeepPartial } from 'typeorm';
 import { Device } from 'src/modules/devices/entities/device.entity';
+import { MqttDeviceTopicDto } from './dto/topics-mqtt.dto';
 
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {
@@ -105,22 +106,40 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         logDescription: 'TEST LOG FROM MQTT',
         logData: JSON.stringify({ test: 'data' }),
         userId: 1,
-        deviceId: 8,
+        deviceId: null, // message là 1 mảng >> nên lấy hay ko ?
       };
       this.systemLogsService.create(tempLogDto);
     } else if (topic.startsWith(MQTT_CONFIG.SUB_TOPICS.WARNINGS)) {
       // Xử lý warning message
+      const tempWarningDto = {
+        log: EDeviceLog.WARNING,
+        logDescription: 'TEST LOG FROM MQTT',
+        logData: JSON.stringify({ test: 'data' }),
+        userId: 1,
+        deviceId: null, // Có thể lấy từ message nếu có
+      };
+      this.systemLogsService.create(tempWarningDto);
     }
   }
 
   // Có thể thêm phương thức public để các Service khác publish tin nhắn nếu cần
   public publish(
     topic: string = MQTT_CONFIG.PUB_TOPICS.DEVICES,
-    data: DeepPartial<Device>,
+    updateDto: DeepPartial<Device>,
   ) {
+    // Data preprocessing
+    const data: MqttDeviceTopicDto = {
+      id: updateDto.id,
+      state: updateDto.state,
+      autoMode: updateDto.autoMode,
+      status: updateDto.status,
+      tempHigher: updateDto.thresholdHigh,
+      tempLower: updateDto.thresholdLow,
+    } as MqttDeviceTopicDto;
+
     console.log('Publishing MQTT message...', topic, data);
     if (this.client && this.client.connected) {
-      this.client.publish(topic, JSON.stringify(data), { qos: 1 });
+      this.client.publish(topic, JSON.stringify(data), { qos: 2 }); // Qos  2 đảm bảo tin nhắn được nhận ít nhất một lần
       console.log(
         `[MQTT Publish] Topic: ${topic} | Message: ${JSON.stringify(data)}`,
       );

@@ -74,6 +74,8 @@ function DeviceControlCard({
       await devicesAPI.update(device.id, {
         state: Boolean(next),
         autoMode: autoMode[device.id] ?? false,
+        thresholdHigh: device.thresholdHigh,
+        thresholdLow: device.thresholdLow,
       });
       toast.success("Yêu cầu gửi đến hệ thống");
       console.info(
@@ -107,6 +109,8 @@ function DeviceControlCard({
       await devicesAPI.update(deviceId, {
         autoMode: newAutoMode,
         state: isDeviceOn(dev),
+        thresholdHigh: dev.thresholdHigh,
+        thresholdLow: dev.thresholdLow,
       });
       toast.success(`Chế độ ${newAutoMode ? "tự động" : "thủ công"} được bật`);
     } catch (err: any) {
