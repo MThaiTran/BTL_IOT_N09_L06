@@ -1,4 +1,4 @@
-import { FileHandler } from './../../../backend/src/modules/file-handler/entities/file-handler.entity';
+import { FileHandler } from "./../../../backend/src/modules/file-handler/entities/file-handler.entity";
 import axios from "axios";
 import { USE_MOCK_DATA } from "../config/config";
 import {
@@ -60,19 +60,13 @@ api.interceptors.response.use(
 // Auth API - Switch between mock and real API
 export const authAPI = {
   signin: (data: LoginDto) =>
-    USE_MOCK_DATA
-      ? mockAuthAPI.signin(data)
-      : api.post(import.meta.env.VITE_AUTH_SIGNIN_API_URL, data),
+    api.post(import.meta.env.VITE_AUTH_SIGNIN_API_URL, data),
 
   signup: (data: SignupDto): Promise<{ data: any }> =>
-    USE_MOCK_DATA
-      ? mockAuthAPI.signup(data)
-      : api.post(import.meta.env.VITE_AUTH_SIGNUP_API_URL, data),
+    api.post(import.meta.env.VITE_AUTH_SIGNUP_API_URL, data),
 
   getProfile: (): Promise<{ data: any }> =>
-    USE_MOCK_DATA
-      ? mockAuthAPI.getProfile()
-      : api.get(import.meta.env.VITE_AUTH_PROFILE_API_URL),
+    api.get(import.meta.env.VITE_AUTH_PROFILE_API_URL),
 };
 
 // Devices API - Switch between mock and real API
@@ -89,17 +83,12 @@ export const devicesAPI = {
   update: (id: number, data: UpdateDeviceDto): Promise<{ data: Device }> =>
     api.patch(`${import.meta.env.VITE_DEVICE_API_URL}/${id}`, data),
 
-  // Update firmware OTA
-  upload: (data: FormData): Promise<{ data: Device }> =>
-    api.post(`/file-handler/upload`, data, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
-
   delete: (id: number): Promise<void> =>
     api.delete(`${import.meta.env.VITE_DEVICE_API_URL}/${id}`),
 };
 //userDevicesAPI
 export const userDevicesAPI = {
+  // Get all devices by user ID
   getOne: (id: number) =>
     api.get(`${import.meta.env.VITE_USER_DEVICE_API_URL}/${id}`),
 
@@ -119,7 +108,6 @@ export const deviceTypesAPI = {
 
   getOne: (id: number): Promise<{ data: DeviceType }> =>
     api.get(`${import.meta.env.VITE_DEVICE_TYPE_API_URL}/${id}`),
-
 };
 
 // System Logs API - Switch between mock and real API
@@ -133,25 +121,15 @@ export const systemLogsAPI = {
 
 // Users API - Switch between mock and real API
 export const usersAPI = {
-  getAll: () =>
-    USE_MOCK_DATA
-      ? mockUsersAPI.getAll()
-      : api.get(`${import.meta.env.VITE_USER_API_URL}`),
+  getAll: () => api.get(`${import.meta.env.VITE_USER_API_URL}`),
 
-  getOne: (id: number) =>
-    USE_MOCK_DATA
-      ? mockUsersAPI.getOne(id)
-      : api.get(`${import.meta.env.VITE_USER_API_URL}/${id}`),
+  getOne: (id: number) => api.get(`${import.meta.env.VITE_USER_API_URL}/${id}`),
 
   create: (data: CreateUserDto) =>
-    USE_MOCK_DATA
-      ? mockUsersAPI.create(data)
-      : api.post(`${import.meta.env.VITE_USER_API_URL}`, data),
+    api.post(`${import.meta.env.VITE_USER_API_URL}`, data),
 
   update: (id: number, data: UpdateUserDto) =>
-    USE_MOCK_DATA
-      ? mockUsersAPI.update(id, data)
-      : api.patch(`${import.meta.env.VITE_USER_API_URL}/${id}`, data),
+    api.patch(`${import.meta.env.VITE_USER_API_URL}/${id}`, data),
 
   delete: (id: number): Promise<void> =>
     api.delete(`${import.meta.env.VITE_USER_API_URL}/${id}`),
@@ -167,9 +145,9 @@ export const rolesAPI = {
 };
 export const filehandler = {
   upload: (data: FormData): Promise<{ data: Device }> =>
-    api.post(`/file-handler/upload`, data, {
+    api.post(`${import.meta.env.VITE_UPLOAD_API_URL}`, data, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
-}
+};
 
 export default api;

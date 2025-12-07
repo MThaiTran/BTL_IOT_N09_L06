@@ -41,3 +41,12 @@ export enum EDeviceLog {
   UPDATE = "UPDATE",
   USER_ACTION = "USER_ACTION",
 }
+
+export enum EMQTTThresholdType {
+  TEMPERATURE_HIGHER = "tempHigher",
+  TEMPERATURE_LOWER = "tempLower",
+  HUMIDITY_HIGHER = "humidityHigher",
+  HUMIDITY_LOWER = "humidityLower",
+  MOTION_ON = "motionOn",
+  MOTION_OFF = "motionOff",
+}

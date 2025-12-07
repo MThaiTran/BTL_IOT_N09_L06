@@ -16,11 +16,10 @@ export interface DeviceControlCardProps {
 
 export interface SensorCardProps {
   label: string;
-  value: number;
+  value: number | string;
   unit: string;
   color: "red" | "blue" | "yellow"; // Quy định màu
   icon?: React.ReactNode;
-  
 }
 
 export interface SystemStatusCardProps {

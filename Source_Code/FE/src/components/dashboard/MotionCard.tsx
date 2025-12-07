@@ -1,27 +1,15 @@
-import { Thermometer, Droplets, Wifi, WifiOff, Sun } from "lucide-react";
+import { Wifi, WifiOff, Sun } from "lucide-react";
 import { format } from "date-fns";
 // 1. Import Hook để lấy dữ liệu MQTT
 import { useMqttData } from "../../services/useMqttData";
 import { TemperatureHumidityCardProps } from "../../interfaces/ui-props.interface";
 
-function TemperatureHumidityCard({ device }: TemperatureHumidityCardProps) {
+function MotionCard({ device }: TemperatureHumidityCardProps) {
   // 2. Gọi Hook để lấy dữ liệu thực tế (Temp, Hum, Lux) và trạng thái kết nối
   const { statusData, status } = useMqttData();
 
   // Kiểm tra trạng thái Online dựa vào kết nối MQTT
   const isOnline = status === "Connected";
-
-  const getTempColor = (temp: number) => {
-    if (temp < 20) return "text-blue-500";
-    if (temp > 30) return "text-red-500";
-    return "text-green-500";
-  };
-
-  const getHumidityColor = (humidity: number) => {
-    if (humidity < 40) return "text-orange-500";
-    if (humidity > 80) return "text-blue-500";
-    return "text-green-500";
-  };
 
   // Hàm màu cho ánh sáng
   const getLuxColor = (lux: number) => {
@@ -41,7 +29,7 @@ function TemperatureHumidityCard({ device }: TemperatureHumidityCardProps) {
           {isOnline ? (
             <>
               <Wifi size={16} className="text-green-500" />
-              <span className="text-xs text-green-500">Live (MQTT)</span>
+              <span className="text-xs text-green-500">Live</span>
             </>
           ) : (
             <>
@@ -52,54 +40,8 @@ function TemperatureHumidityCard({ device }: TemperatureHumidityCardProps) {
         </div>
       </div>
 
-      {/* --- PHẦN 1: NHIỆT ĐỘ --- */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Thermometer size={20} className="text-red-500" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Nhiệt độ
-            </span>
-          </div>
-          {/* Sử dụng data.temp từ MQTT */}
-          <span
-            className={`text-2xl font-bold ${getTempColor(
-              statusData?.sensors.temp ?? 0
-            )}`}
-          >
-            {statusData?.sensors.temp ?? 0}°C
-          </span>
-        </div>
-        {/* Hiển thị ngưỡng từ Database (nếu có) */}
-        {device && (
-          <div className="text-xs text-gray-500 dark:text-gray-500 pl-7">
-            Ngưỡng: {device.thresholdLow}°C - {device.thresholdHigh}°C
-          </div>
-        )}
-      </div>
-
-      {/* --- PHẦN 2: ĐỘ ẨM --- */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Droplets size={20} className="text-blue-500" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Độ ẩm
-            </span>
-          </div>
-          {/* Sử dụng data.hum từ MQTT */}
-          <span
-            className={`text-2xl font-bold ${getHumidityColor(
-              statusData?.sensors.hum ?? 0
-            )}`}
-          >
-            {statusData?.sensors.hum ?? 0}%
-          </span>
-        </div>
-      </div>
-
       {/* --- PHẦN 3: ÁNH SÁNG  --- */}
-      {/* <div className="mb-4">
+      <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Sun size={20} className="text-yellow-500" />
@@ -107,6 +49,7 @@ function TemperatureHumidityCard({ device }: TemperatureHumidityCardProps) {
               Chuyển động
             </span>
           </div>
+          {/* Sử dụng data.lux từ MQTT */}
           <span
             className={`text-2xl font-bold ${getLuxColor(
               statusData?.sensors.motion ? 1 : 0
@@ -115,7 +58,7 @@ function TemperatureHumidityCard({ device }: TemperatureHumidityCardProps) {
             {statusData?.sensors.motion ? 1 : 0}
           </span>
         </div>
-      </div> */}
+      </div>
 
       {/* Footer: Vị trí và thời gian cập nhật */}
       <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -128,4 +71,4 @@ function TemperatureHumidityCard({ device }: TemperatureHumidityCardProps) {
   );
 }
 
-export default TemperatureHumidityCard;
+export default MotionCard;
