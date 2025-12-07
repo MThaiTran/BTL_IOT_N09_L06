@@ -1,5 +1,7 @@
 # (Nháp) Các topic mà backend và ESP32 cần giao tiếp với nhau
 
+> Lưu ý: Hiện tại thiết bị ESP32 sẽ chưa gửi QoS khác 0, với lý do là cần chỉnh sửa thêm code và thêm thư viện khác, đây sẽ là tính năng ưu tiên thấp.
+
 Các topic và mục đích
 ## `/esp32/pubStatus`
 - Do ESP32 gửi đến backend
