@@ -1,3 +1,5 @@
+import { EMQTTThresholdType, Status } from "./enum";
+
 export interface LoginDto {
   email: string;
   password: string;
@@ -65,8 +67,34 @@ export interface UpdateUserDto {
   status?: string;
 }
 
-export interface SensorData {
-  temperature: number;
-  humidity: number;
-  timestamp: Date;
+// ========== MQTT DTOs ==========
+
+export interface StatusTopicDto {
+  sensors: SensorDataDto;
+  devices: DeviceDataDto[];
+}
+
+export interface SensorDataDto {
+  temp: number;
+  hum: number;
+  motion: boolean;
+}
+
+export interface DeviceDataDto {
+  id: number;
+  state: boolean;
+  autoMode: boolean;
+  status: Status;
+}
+
+export interface LogTopicDto {
+  sensors: SensorDataDto;
+  devices: DeviceDataDto[];
+}
+
+export interface WarningTopicDto {
+  id: number;
+  threshold: EMQTTThresholdType;
+  thresholdValue: number;
+  currentValue: number;
 }

@@ -1,11 +1,10 @@
+import { Status } from "../../interfaces/enum";
 import { SystemStatusCardProps } from "../../interfaces/ui-props.interface";
 import { CheckCircle, XCircle, AlertCircle, Activity } from "lucide-react";
 
 function SystemStatusCard({ devices }: SystemStatusCardProps) {
   const onlineDevices = devices.filter(
-    (d) =>
-      d.lastestDeviceUpdate &&
-      new Date(d.lastestDeviceUpdate).getTime() > Date.now() - 60000
+    (device) => device.status === Status.ACTIVE
   ).length;
 
   const offlineDevices = devices.length - onlineDevices;
