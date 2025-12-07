@@ -113,3 +113,49 @@ Các tên ngưỡng mà ESP có thể đọc được:
 ```
 { availability: false } // false = đã ngắt kết nối
 ```
+
+
+# Test cases
+- Bật một thiết bị
+```
+{
+  "id": 10,
+  "state": true
+}
+```
+
+- Tắt một thiết bị
+```
+{
+  "id": 10,
+  "state": true
+}
+```
+
+- Đặt điều kiện: nóng hơn bao nhiêu độ
+```
+{
+  "id": 13,
+  "autoMode": true,
+  "tempHigher": 29
+}
+```
+
+- Đặt điều kiện: có chuyển động
+```
+{
+  "id": 12,
+  "autoMode": true,
+  "tempHigher": 28
+}
+```
+
+- Đặt điều kiện: độ ẩm cao hơn bao nhiêu % hoặc nhiệt độ cao hơn bao nhiêu
+```
+{
+  "id": 11,
+  "autoMode": true,
+  "tempHigher": 35,
+  "hum"
+}
+```
