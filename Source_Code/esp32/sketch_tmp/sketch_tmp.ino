@@ -3,29 +3,52 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include "DHT.h"
-
 #include "login_infos.h"
+#include "control_infos.h"
 
 
 
-#define DHT_PIN 14
-#define PIR_PIN 25
+#define MQTT_TOPIC_STATUS "esp32/pubStatus"           // Done
+#define MQTT_TOPIC_LOGS "esp32/pubLogs"               // Chek req
+#define MQTT_TOPIC_WARNS "esp32/pubWarnings"          //
+#define MQTT_TOPIC_DEVICES "esp32/subDevices"         // Check req
+#define MQTT_TOPIC_AVAILABILITY "esp32/availability"  // Check req
+#define DHT_PIN 25
+#define PIR_PIN 26
 #define DHT_TYPE DHT11
-#define RELAY_1_PIN 2
-// #define RELAY_2_PIN 17
+
+
+
+// --- DEFINE DEVICES ---
+const int NUM_DEVICES = 6;
+
+Device myDevices[NUM_DEVICES] = {
+  // ID, Pin, State, AutoMode, T_High, H_High, Mot_On, T_Low,  H_Low,  Mot_Off
+  { 8, 23, 0, 0, NAN, NAN, 0, NAN, NAN, 0 },
+  { 9, 22, 0, 0, NAN, NAN, 0, NAN, NAN, 0 },
+  { 10, 19, 0, 0, NAN, NAN, 0, NAN, NAN, 0 },
+  { 11, 18, 0, 0, NAN, NAN, 0, NAN, NAN, 0 },
+  { 12, 17, 0, 0, NAN, NAN, 0, NAN, NAN, 0 },
+  { 13, 16, 0, 0, NAN, NAN, 0, NAN, NAN, 0 }
+};
 
 
 
 WiFiClientSecure espClient;
 PubSubClient client(espClient);
-
 DHT dht(DHT_PIN, DHT_TYPE);
 
 unsigned long lastMsgTime = 0;
 const long interval = 2000;
+unsigned long lastLogTime = 0;
+const long logInterval = 20000;
+const char* MQTT_WILL = "\"availability\": false";
+const char* MQTT_WILL_CONNECTED = "\"availability\": true";
+
+
 
 // HiveMQ Cloud Let's Encrypt CA certificate
-static const char *root_ca PROGMEM = R"EOF(
+static const char* root_ca PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
 TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
@@ -71,12 +94,17 @@ void callback(char* topic, byte* payload, unsigned int length) {
   for (int i = 0; i < length; i++) {
     messageTemp += (char)payload[i];
   }
-  Serial.println(messageTemp);
+  Serial.print("Commands received from topic [");
+  Serial.print(topic);
+  Serial.println("]: " + messageTemp);
 
   // 2. Parse JSON using ArduinoJson
-  // We use a small buffer for incoming commands
-  StaticJsonDocument<200> doc;
+  StaticJsonDocument<512> doc;
   DeserializationError error = deserializeJson(doc, messageTemp);
+  if (error) {
+    Serial.println("Loi JSON!");
+    return;
+  }
 
   if (error) {
     Serial.print("deserializeJson() failed: ");
@@ -84,37 +112,85 @@ void callback(char* topic, byte* payload, unsigned int length) {
     return;
   }
 
-  // 3. Check for specific keys and Control Relays
-  
-  if (doc.containsKey("relay1")) {
-    int state = doc["relay1"]; // 1 for ON, 0 for OFF
-    digitalWrite(RELAY_1_PIN, state ? HIGH : LOW); 
-    Serial.print("Relay 1 set to: ");
-    Serial.println(state);
+  // 3. Match device with ID
+  const int incomingId = doc["id"];
+  Device* targetDevice = nullptr;
+
+  for (int i = 0; i < NUM_DEVICES; i++) {
+    if (myDevices[i].id == incomingId) {
+      targetDevice = &myDevices[i];
+      break;
+    }
   }
 
-  // if (doc.containsKey("relay2")) {
-  //   int state = doc["relay2"];
-  //   digitalWrite(RELAY_2_PIN, state ? HIGH : LOW);
-  //   Serial.print("Relay 2 set to: ");
-  //   Serial.println(state);
-  // }
+  if (targetDevice == nullptr) {
+    Serial.println("No device found with the received ID.");
+    return;
+  }
+
+  bool stateChanged = false;  // Check if any changes are made
+
+  // 4. Logic: AUTO or MANUAL
+
+  // CASE 1: MANUAL
+  bool isManualRequest = (doc.containsKey("autoMode") && doc["autoMode"] == false) || doc.containsKey("state");
+  if (isManualRequest)) {
+    targetDevice->autoMode = false;
+
+    if (doc.containsKey("state")) {
+      bool reqState = doc["state"];
+      
+      if (targetDevice->state != reqState) {
+        targetDevice->state = reqState;
+        digitalWrite(targetDevice->pin, reqState ? HIGH : LOW);
+        stateChanged = true; 
+      }
+    }
+
+    targetDevice->tempHigher = NAN;
+    targetDevice->humHigher = NAN;
+    targetDevice->motionOn = false;
+
+    targetDevice->tempLower = NAN;
+    targetDevice->humLower = NAN;
+    targetDevice->motionOff = false;
+  }
+
+  // CASE 2: AUTO
+  else {
+    targetDevice->autoMode = true;
+
+    targetDevice->tempHigher = doc.containsKey("tempHigher") ? doc["tempHigher"].as<float>() : NAN;
+    targetDevice->humHigher = doc.containsKey("humHigher") ? doc["humHigher"].as<float>() : NAN;
+    targetDevice->motionOn = doc.containsKey("motionOn") ? doc["motionOn"].as<bool>() : false;
+
+    targetDevice->tempLower = doc.containsKey("tempLower") ? doc["tempLower"].as<float>() : NAN;
+    targetDevice->humLower = doc.containsKey("humLower") ? doc["humLower"].as<float>() : NAN;
+    targetDevice->motionOff = doc.containsKey("motionOff") ? doc["motionOff"].as<bool>() : false;
+
+    Serial.println("autoMode updated");
+  }
+
+  if (stateChanged) {
+    Serial.println("Manual Change Detected! Sending Log...");
+    publishLog();
+  }
 }
 
 
 
 void setup_wifi() {
-  delay(10);
+  delay(100);
   Serial.println();
   Serial.print("Connecting to ");
-  Serial.println(WIFI_SSID); // Uses macro from secrets.h
+  Serial.println(WIFI_SSID);
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+    delay(1000);
+    Serial.println("Wifi connect failed. Reconnecting...");
   }
 
   Serial.println("\nWiFi connected");
@@ -127,10 +203,11 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     String clientId = "ESP32-" + String(random(0xffff), HEX);
-    
-    if (client.connect(clientId.c_str(), MQTT_USER, MQTT_PASS)) {
+
+    if (client.connect(clientId.c_str(), MQTT_USER, MQTT_PASS, MQTT_TOPIC_AVAILABILITY, 1, true, MQTT_WILL)) {
       Serial.println("connected");
-      client.subscribe(MQTT_TOPIC_RELAYS);
+      client.publish(MQTT_TOPIC_AVAILABILITY, MQTT_WILL_CONNECTED, true);
+      client.subscribe(MQTT_TOPIC_DEVICES);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -149,18 +226,210 @@ void setup() {
   dht.begin();
   pinMode(PIR_PIN, INPUT);
 
-  pinMode(RELAY_1_PIN, OUTPUT);
-  digitalWrite(RELAY_1_PIN, HIGH);
-  
-  // pinMode(RELAY_2_PIN, OUTPUT);
-  // digitalWrite(RELAY_2_PIN, HIGH);
-
   // Init Network
   setup_wifi();
-  
   espClient.setCACert(root_ca);
   client.setServer(MQTT_SERVER, MQTT_PORT);
   client.setCallback(callback);
+
+  client.setBufferSize(2048);
+
+  for (int i = 0; i < NUM_DEVICES; i++) {
+    pinMode(myDevices[i].pin, OUTPUT);
+    digitalWrite(myDevices[i].pin, LOW);
+  }
+
+  Serial.println("System Initializing...");
+}
+
+
+
+void publishWarning(int devId, const char* threshName, float threshVal, float currentVal) {
+  StaticJsonDocument<256> doc;
+
+  doc["id"] = devId;
+  doc["threshold"] = threshName;
+  doc["thresholdValue"] = threshVal;
+  doc["value"] = currentVal;
+
+  String output;
+  serializeJson(doc, output);
+
+  Serial.print(">> Sending WARNING: ");
+  Serial.println(output);
+
+  client.publish(MQTT_TOPIC_WARNS, output.c_str());
+}
+
+
+
+void checkAutoRules(float currentTemp, float currentHum, bool currentMotion) {
+  bool anyDeviceChanged = false;
+
+  // for (int i = 0; i < NUM_DEVICES; i++) {
+  //   if (!myDevices[i].autoMode) continue;
+
+  //   bool stateChanged = false;
+  //   bool newState = myDevices[i].state;
+
+  //   if (!isnan(myDevices[i].tempHigher) && currentTemp > myDevices[i].tempHigher)
+  //     newState = true;
+  //   if (!isnan(myDevices[i].humHigher) && currentHum > myDevices[i].humHigher)
+  //     newState = true;
+  //   if (myDevices[i].motionOn && currentMotion)
+  //     newState = true;
+
+  //   if (!isnan(myDevices[i].tempLower) && currentTemp < myDevices[i].tempLower)
+  //     newState = false;
+  //   if (!isnan(myDevices[i].humLower) && currentHum < myDevices[i].humLower)
+  //     newState = false;
+  //   if (myDevices[i].motionOff && !currentMotion)
+  //     newState = false;
+
+  //   // --- APPLY STATUS ---
+  //   if (newState != myDevices[i].state) {
+  //     myDevices[i].state = newState;
+
+  //     digitalWrite(myDevices[i].pin, newState ? HIGH : LOW);
+
+  //     Serial.print("Auto Trigger: Device ");
+  //     Serial.print(myDevices[i].id);
+  //     Serial.print(" turned ");
+  //     Serial.println(newState ? "ON" : "OFF");
+
+  //     anyDeviceChanged = true;  // <--- Đánh dấu có sự thay đổi
+  //   }
+  // }
+
+
+  for (int i = 0; i < NUM_DEVICES; i++) {
+    if (!myDevices[i].autoMode) continue;
+
+    bool currentState = myDevices[i].state;
+    bool newState = currentState;
+    
+    const char* triggerReason = "";
+    float triggerLimit = 0;
+    float triggerActualValue = 0;
+
+
+    if (currentState == false) {
+      if (!isnan(myDevices[i].tempHigher) && currentTemp > myDevices[i].tempHigher) {
+        newState = true;
+        triggerReason = "tempHigher";
+        triggerLimit = myDevices[i].tempHigher;
+        triggerActualValue = currentTemp;
+      } else if (!isnan(myDevices[i].humHigher) && currentHum > myDevices[i].humHigher) {
+        newState = true;
+        triggerReason = "humHigher";
+        triggerLimit = myDevices[i].humHigher;
+        triggerActualValue = currentHum;
+      } else if (myDevices[i].motionOn && currentMotion) {
+        newState = true;
+        triggerReason = "motionOn";
+        triggerLimit = true;
+        triggerActualValue = true;
+      } else if (!isnan(myDevices[i].tempLower) && currentTemp < myDevices[i].tempLower) {
+        newState = false;
+        triggerReason = "tempLower";
+        triggerLimit = myDevices[i].tempLower;
+        triggerActualValue = currentTemp;
+      } else if (!isnan(myDevices[i].humLower) && currentHum < myDevices[i].humLower) {
+        newState = false;
+        triggerReason = "humLower";
+        triggerLimit = myDevices[i].humLower;
+        triggerActualValue = currentHum;
+      } else if (myDevices[i].motionOff && !currentMotion) {
+        newState = false;
+        triggerReason = "motionOff";
+        triggerLimit = false;
+        triggerActualValue = false;
+      }
+    } else {
+      // 2. Thiết bị đang BẬT -> Chỉ kiểm tra điều kiện TẮT (Lower/Off)
+      if (!isnan(myDevices[i].tempHigher) && currentTemp < myDevices[i].tempHigher) {
+        newState = true;
+        triggerReason = "tempHigher";
+        triggerLimit = myDevices[i].tempHigher;
+        triggerActualValue = currentTemp;
+      } else if (!isnan(myDevices[i].humHigher) && currentHum < myDevices[i].humHigher) {
+        newState = true;
+        triggerReason = "humHigher";
+        triggerLimit = myDevices[i].humHigher;
+        triggerActualValue = currentHum;
+      } else if (myDevices[i].motionOn && !currentMotion) {
+        newState = true;
+        triggerReason = "motionOn";
+        triggerLimit = true;
+        triggerActualValue = true;
+      } else if (!isnan(myDevices[i].tempLower) && currentTemp > myDevices[i].tempLower) {
+        newState = false;
+        triggerReason = "tempLower";
+        triggerLimit = myDevices[i].tempLower;
+        triggerActualValue = currentTemp;
+      } else if (!isnan(myDevices[i].humLower) && currentHum > myDevices[i].humLower) {
+        newState = false;
+        triggerReason = "humLower";
+        triggerLimit = myDevices[i].humLower;
+        triggerActualValue = currentHum;
+      } else if (!myDevices[i].motionOff && currentMotion) {
+        newState = false;
+        triggerReason = "motionOff";
+        triggerLimit = false;
+        triggerActualValue = false;
+      }
+    }
+
+    // --- XỬ LÝ KHI CÓ THAY ĐỔI ---
+    if (newState != currentState) {
+      myDevices[i].state = newState;
+      digitalWrite(myDevices[i].pin, newState ? HIGH : LOW);
+      anyDeviceChanged = true;
+
+      if (strlen(triggerReason) > 0) {
+        publishWarning(myDevices[i].id, triggerReason, triggerLimit, triggerActualValue);
+      }
+    }
+  }
+
+
+  if (anyDeviceChanged) {
+    Serial.println("Auto Change Detected! Sending Log...");
+    publishLog();
+  }
+}
+
+
+
+void publishLog() {
+  float t = dht.readTemperature();
+  float h = dht.readHumidity();
+  bool m = (digitalRead(PIR_PIN) == HIGH);
+
+  if (isnan(t) || isnan(h)) return;
+
+  DynamicJsonDocument log(1024);
+
+  // Object Sensors
+  JsonObject sensors = log.createNestedObject("sensors");
+  sensors["temp"] = t;
+  sensors["hum"] = h;
+  sensors["motion"] = m;
+
+  // Array Devices
+  JsonArray devices = log.createNestedArray("devices");
+  for (int i = 0; i < NUM_DEVICES; i++) {
+    JsonObject d = devices.createNestedObject();
+    d["id"] = myDevices[i].id;
+    d["state"] = myDevices[i].state;
+    d["autoMode"] = myDevices[i].autoMode;
+  }
+
+  String output;
+  serializeJson(log, output);
+
+  Serial.println(">> Sending LOG data...");
+  client.publish(MQTT_TOPIC_LOGS, output.c_str());
 }
 
 
@@ -168,8 +437,8 @@ void setup() {
 void loop() {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi lost! Reconnecting...");
-    setup_wifi();  
-    return; 
+    setup_wifi();
+    return;
   }
 
   if (!client.connected()) {
@@ -180,10 +449,15 @@ void loop() {
 
   unsigned long now = millis();
 
+  if (now - lastLogTime > logInterval) {
+    lastLogTime = now;
+    publishLog();
+  }
+
   if (now - lastMsgTime > interval) {
     lastMsgTime = now;
 
-    // --- READ DATA ---
+    // --- READ SENSORS ---
     float h = dht.readHumidity();
     float t = dht.readTemperature();
     int motion = digitalRead(PIR_PIN);
@@ -193,18 +467,32 @@ void loop() {
       return;
     }
 
-    // --- PREPARE JSON ---
-    StaticJsonDocument<200> doc;
-    doc["temp"] = t;
-    doc["hum"] = h;
-    doc["motion"] = (motion == HIGH);
+    checkAutoRules(t, h, motion);
 
-    char buffer[256];
-    serializeJson(doc, buffer);
+    // --- PREPARE JSON ---
+    DynamicJsonDocument doc(2048);
+
+    JsonObject sensorArray = doc.createNestedObject("sensors");
+    sensorArray["temp"] = t;
+    sensorArray["hum"] = h;
+    sensorArray["motion"] = (motion == HIGH);
+
+    JsonArray devicesArray = doc.createNestedArray("devices");
+    for (int i = 0; i < NUM_DEVICES; i++) {
+      JsonObject devObj = devicesArray.createNestedObject();
+      myDevices[i].state = digitalRead(myDevices[i].pin);
+      devObj["id"] = myDevices[i].id;
+      devObj["state"] = myDevices[i].state;
+      devObj["autoMode"] = myDevices[i].autoMode;
+    }
+
+
+    String output;
+    serializeJson(doc, output);
 
     // --- PUBLISH TO HIVEMQ ---
     Serial.print("Publishing message: ");
-    Serial.println(buffer);
-    client.publish(MQTT_TOPIC_SENSORS, buffer);
+    Serial.println(output);
+    client.publish(MQTT_TOPIC_STATUS, output.c_str());
   }
 }
