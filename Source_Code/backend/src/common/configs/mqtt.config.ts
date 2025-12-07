@@ -8,10 +8,10 @@ export const MQTT_CONFIG = {
   CONNECT_TIMEOUT: 4000,
   RECONNECT_PERIOD: 1000,
   SUB_TOPICS: {
-    LOGS: 'logs/',
-    WARNINGS: 'warnings/',
+    LOGS: process.env.MQTT_LOGS_TOPIC || 'logs',
+    WARNINGS: process.env.MQTT_WARNINGS_TOPIC || 'warnings',
   },
   PUB_TOPICS: {
-    DEVICES: 'devices/',
+    DEVICES: process.env.MQTT_DEVICES_TOPIC || 'devices',
   },
 };

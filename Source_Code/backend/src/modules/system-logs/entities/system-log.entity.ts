@@ -18,8 +18,8 @@ export class SystemLog extends BaseEntity {
   @Column({ type: 'number' })
   userId: number;
 
-  @Column({ type: 'number' })
-  deviceId: number;
+  @Column({ type: 'number', nullable: true })
+  deviceId: number | null;
 
   @ManyToOne(() => User)
   user: User;
