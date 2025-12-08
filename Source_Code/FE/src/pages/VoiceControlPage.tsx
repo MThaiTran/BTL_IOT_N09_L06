@@ -19,8 +19,7 @@ declare global {
 const commandHints = [
   'Bật đèn phòng khách',
   'Tắt quạt phòng ngủ',
-  'Tăng tốc độ quạt',
-  'Giảm nhiệt độ xuống 25 độ',
+
 ];
 
 function VoiceControlPage() {
@@ -51,7 +50,7 @@ function VoiceControlPage() {
         `🚀 [DỰA VÀO COMMAND] Gọi devicesAPI.update(${deviceId}, { state: ${state} })`
       );
       // ✅ FIX: Truyền đầy đủ các field cần thiết
-      const response = await devicesAPI.update(deviceId, {
+      const response = await devicesAPI.update(deviceId, { 
         state,
         name: deviceName,
         location: location,
@@ -93,21 +92,39 @@ function VoiceControlPage() {
 
   // Filter devices được cấp quyền
   useEffect(() => {
+    if (!allDevices) {
+      console.log('⏳ allDevices chưa load');
+      return;
+    }
+
     if (userRole === UserRole.ADMIN) {
-      if (allDevices) {
-        const controlDevices = allDevices.filter(
-          (d) => !d.name?.toLowerCase().includes('cảm biến')
-        );
-        setPermittedDevices(controlDevices);
-      }
+      console.log('👤 ADMIN: Lấy tất cả devices (không phải cảm biến)');
+      const controlDevices = allDevices.filter(
+        (d) => !d.name?.toLowerCase().includes('cảm biến')
+      );
+      console.log(`✅ Tìm được ${controlDevices.length} devices cho Admin`);
+      controlDevices.forEach((d) => console.log(`   [ID=${d.id}] ${d.name} (${d.location})`));
+      
+      setPermittedDevices(controlDevices);
       setIsLoadingPermissions(false);
-    } else if (userDevices && allDevices) {
+    } else if (userRole === UserRole.GUEST || userRole === UserRole.HOUSE_OWNER) {
+      if (!userDevices || userDevices.length === 0) {
+        console.log('⏳ userDevices chưa load');
+        return;
+      }
+
+      console.log(`👤 ${userRole}: Lấy devices được cấp`);
       const userDeviceIds = userDevices.map((ud: any) => ud.deviceId);
+      console.log(`   Danh sách device IDs được cấp: [${userDeviceIds.join(',')}]`);
+
       const permitted = allDevices.filter(
         (d) =>
           userDeviceIds.includes(d.id) &&
           !d.name?.toLowerCase().includes('cảm biến')
       );
+      console.log(`✅ Tìm được ${permitted.length} devices`);
+      permitted.forEach((d) => console.log(`   [ID=${d.id}] ${d.name} (${d.location})`));
+
       setPermittedDevices(permitted);
       setIsLoadingPermissions(false);
     }
@@ -138,12 +155,33 @@ function VoiceControlPage() {
         setStatus('idle');
       };
 
-      recognition.onerror = () => {
-        toast.error('Có lỗi khi nhận dạng giọng nói');
+      recognition.onerror = (event: any) => {
+        const errorCode = event.error;
+        const errorMessages: Record<string, string> = {
+          'no-speech': '⏱️ Không phát hiện tiếng nói. Vui lòng thử lại.',
+          'audio-capture': '🎤 Không thể truy cập microphone. Kiểm tra quyền truy cập.',
+          'network': '🌐 Lỗi kết nối mạng. Kiểm tra internet.',
+          'not-allowed': '🔐 Trình duyệt từ chối quyền truy cập microphone.',
+          'service-not-allowed': '❌ Dịch vụ nhận dạng giọng nói bị vô hiệu hóa.',
+          'bad-grammar': '📝 Lỗi cấu hình nhận dạng.',
+          'network-timeout': '⏱️ Hết thời gian chờ kết nối.',
+          'permission-denied': '🔒 Quyền microphone bị từ chối.',
+        };
+
+        const errorMsg =
+          errorMessages[errorCode] ||
+          `❌ Lỗi nhận dạng: ${errorCode || 'Không xác định'}`;
+
+        console.error(`🔴 [SpeechRecognition Error] Code: ${errorCode}`);
+        console.error(`   Message: ${errorMsg}`);
+
+        setLastAction(errorMsg);
+        toast.error(errorMsg);
         setStatus('idle');
       };
 
       recognition.onend = () => {
+        console.log('✅ [SpeechRecognition] Kết thúc');
         setStatus('idle');
       };
 
@@ -153,68 +191,154 @@ function VoiceControlPage() {
 
   // ✅ Tìm device dựa vào loại + vị trí
   const findDevice = (
-    deviceType: 'light' | 'fan',
+    deviceType: 'light' | 'fan' | 'đèn' | 'quạt',
     location?: string
   ): Device | null => {
-    if (deviceType === 'light') {
+    console.log(`\n🔍 [findDevice] Tìm: type=${deviceType}, location=${location || 'không xác định'}`);
+    console.log(`   permittedDevices.length = ${permittedDevices.length}`);
+    
+    if (deviceType === 'light' || deviceType === 'đèn') {
+      console.log(`   📍 Loại: ĐÈN`);
+      
       if (location) {
-        return (
-          permittedDevices.find(
-            (d) =>
-              d.location?.toLowerCase().includes(location.toLowerCase()) &&
-              d.name?.toLowerCase().includes('đèn')
-          ) || null
-        );
+        console.log(`   🎯 Tìm đèn ở vị trí: "${location}"`);
+        console.log(`   Duyệt danh sách:`);
+        
+        permittedDevices.forEach((d) => {
+          const locationMatch = d.location?.toLowerCase().includes(location.toLowerCase());
+          const nameMatch = d.name?.toLowerCase().includes('đèn');
+          const fullMatch = locationMatch && nameMatch;
+          
+          console.log(
+            `     [ID=${d.id}] ${d.name} (${d.location})` +
+            `\n       - location.includes('${location}'): ${locationMatch}` +
+            `\n       - name.includes('đèn'): ${nameMatch}` +
+            `\n       - MATCH: ${fullMatch ? '✅' : '❌'}`
+          );
+        });
+        
+        const result = permittedDevices.find(
+          (d) =>
+            d.location?.toLowerCase().includes(location.toLowerCase()) &&
+            d.name?.toLowerCase().includes('đèn')
+        ) || null;
+        
+        console.log(`   ✨ Kết quả: ${result ? `[ID=${result.id}] ${result.name}` : 'NULL'}`);
+        return result;
       }
-      return (
+      
+      console.log(`   🎯 Tìm đèn (không xác định vị trí)`);
+      const result =
         permittedDevices.find((d) => d.name?.toLowerCase().includes('đèn')) ||
-        null
-      );
-    } else if (deviceType === 'fan') {
+        null;
+      
+      console.log(`   ✨ Kết quả: ${result ? `[ID=${result.id}] ${result.name}` : 'NULL'}`);
+      return result;
+    } else if (deviceType === 'fan' || deviceType === 'quạt') {
+      console.log(`   📍 Loại: QUẠT`);
+      
       if (location) {
-        return (
-          permittedDevices.find(
-            (d) =>
-              d.location?.toLowerCase().includes(location.toLowerCase()) &&
-              d.name?.toLowerCase().includes('quạt')
-          ) || null
-        );
+        console.log(`   🎯 Tìm quạt ở vị trí: "${location}"`);
+        console.log(`   Duyệt danh sách:`);
+        
+        permittedDevices.forEach((d) => {
+          const locationMatch = d.location?.toLowerCase().includes(location.toLowerCase());
+          const nameMatch = d.name?.toLowerCase().includes('quạt');
+          const fullMatch = locationMatch && nameMatch;
+          
+          console.log(
+            `     [ID=${d.id}] ${d.name} (${d.location})` +
+            `\n       - location.includes('${location}'): ${locationMatch}` +
+            `\n       - name.includes('quạt'): ${nameMatch}` +
+            `\n       - MATCH: ${fullMatch ? '✅' : '❌'}`
+          );
+        });
+        
+        const result = permittedDevices.find(
+          (d) =>
+            d.location?.toLowerCase().includes(location.toLowerCase()) &&
+            d.name?.toLowerCase().includes('quạt')
+        ) || null;
+        
+        console.log(`   ✨ Kết quả: ${result ? `[ID=${result.id}] ${result.name}` : 'NULL'}`);
+        return result;
       }
-      return (
+      
+      console.log(`   🎯 Tìm quạt (không xác định vị trí)`);
+      const result =
         permittedDevices.find((d) => d.name?.toLowerCase().includes('quạt')) ||
-        null
-      );
+        null;
+      
+      console.log(`   ✨ Kết quả: ${result ? `[ID=${result.id}] ${result.name}` : 'NULL'}`);
+      return result;
     }
+    
+    console.log(`   ❌ Loại thiết bị không hợp lệ`);
     return null;
   };
 
   // ✅ Trích xuất vị trí từ command
   const extractLocation = (text: string): string | null => {
     const lightLocations = ['phòng ngủ', 'cầu thang', 'phòng khách', 'phòng bếp', 'sân'];
-    const lower = text.toLowerCase();
+    const lower = text.toLowerCase().trim();  // ✅ Thêm trim()
+    
+    console.log(`🔍 [extractLocation] Text: "${text}" → lowercase: "${lower}"`);
+    
     for (const location of lightLocations) {
       if (lower.includes(location)) {
+        console.log(`✅ Tìm thấy location: "${location}"`);
         return location;
       }
     }
+    
+    console.log(`❌ Không tìm thấy location nào. Các location hợp lệ: ${lightLocations.join(', ')}`);
     return null;
   };
 
-  // ✅ LỰA CHỌN ĐÚNG LUỒNG:
-  // command text → tìm device (by name + location) → gọi devicesAPI.update(id, {state})
+  // ✅ Sửa executeCommand
   const executeCommand = async (text: string): Promise<void> => {
     const lower = text.toLowerCase();
     const location = extractLocation(text);
 
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`📍 [executeCommand] Location trích xuất: ${location || 'NULL'}`);
+    console.log(`📱 permittedDevices hiện có: ${permittedDevices.length} thiết bị`);
+    permittedDevices.forEach((d) => 
+      console.log(`   [ID=${d.id}] ${d.name} (${d.location})`)
+    );
+    console.log(`${'='.repeat(60)}\n`);
+
     // Lệnh: BẬT ĐÈN
     if (lower.includes('bật') && lower.includes('đèn')) {
-      const device = findDevice('light', location || undefined);
-      if (!device) {
-        setLastAction('❌ Không tìm thấy đèn');
-        toast.error('Không tìm thấy đèn');
+      // ✅ KIỂM TRA: Không có location
+      if (!location) {
+        const errorMsg = '❌ Chưa xác định vị trí. Vui lòng nói rõ: phòng ngủ, cầu thang, phòng khách, phòng bếp hoặc sân';
+        console.log(`❌ [BẬT ĐÈN] ${errorMsg}`);
+        setLastAction(errorMsg);
+        toast.error(errorMsg);
         return;
       }
-      // ✅ GỌI API TẠI ĐÂY
+
+      console.log(`🔎 [BẬT ĐÈN] Tìm device với location: "${location}"`);
+      
+      const device = findDevice('đèn', location);
+      
+      console.log(`🎯 Kết quả findDevice: ${device ? `[ID=${device.id}] ${device.name}` : 'NULL'}`);
+      
+      if (!device) {
+        const availableLights = permittedDevices
+          .filter((d) => d.name?.toLowerCase().includes('đèn'))
+          .map((d) => d.location)
+          .join(', ');
+        
+        const errorMsg = `❌ Không có đèn tại ${location}. Các vị trí có đèn: ${availableLights || 'không có'}`;
+        console.log(`❌ [BẬT ĐÈN] ${errorMsg}`);
+        setLastAction(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+      
+      console.log(`✅ [BẬT ĐÈN] Tìm thấy device [ID=${device.id}] - Gọi API...`);
       await updateDeviceMutation.mutateAsync({
         deviceId: device.id,
         state: true,
@@ -226,13 +350,33 @@ function VoiceControlPage() {
 
     // Lệnh: TẮT ĐÈN
     if (lower.includes('tắt') && lower.includes('đèn')) {
-      const device = findDevice('light', location || undefined);
-      if (!device) {
-        setLastAction('❌ Không tìm thấy đèn');
-        toast.error('Không tìm thấy đèn');
+      // ✅ KIỂM TRA: Không có location
+      if (!location) {
+        const errorMsg = '❌ Chưa xác định vị trí. Vui lòng nói rõ: phòng ngủ, cầu thang, phòng khách, phòng bếp hoặc sân';
+        console.log(`❌ [TẮT ĐÈN] ${errorMsg}`);
+        setLastAction(errorMsg);
+        toast.error(errorMsg);
         return;
       }
-      // ✅ GỌI API TẠI ĐÂY
+
+      console.log(`🔎 [TẮT ĐÈN] Tìm device với location: "${location}"`);
+      
+      const device = findDevice('đèn', location);
+      
+      if (!device) {
+        const availableLights = permittedDevices
+          .filter((d) => d.name?.toLowerCase().includes('đèn'))
+          .map((d) => d.location)
+          .join(', ');
+        
+        const errorMsg = `❌ Không có đèn tại ${location}. Các vị trí có đèn: ${availableLights || 'không có'}`;
+        console.log(`❌ [TẮT ĐÈN] ${errorMsg}`);
+        setLastAction(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
+      console.log(`✅ [TẮT ĐÈN] Tìm thấy device [ID=${device.id}] - Gọi API...`);
       await updateDeviceMutation.mutateAsync({
         deviceId: device.id,
         state: false,
@@ -244,13 +388,33 @@ function VoiceControlPage() {
 
     // Lệnh: BẬT QUẠT
     if (lower.includes('bật') && lower.includes('quạt')) {
-      const device = findDevice('fan', location || undefined);
-      if (!device) {
-        setLastAction('❌ Không tìm thấy quạt');
-        toast.error('Không tìm thấy quạt');
+      // ✅ KIỂM TRA: Không có location
+      if (!location) {
+        const errorMsg = '❌ Chưa xác định vị trí. Vui lòng nói rõ: phòng ngủ, cầu thang, phòng khách, phòng bếp hoặc sân';
+        console.log(`❌ [BẬT QUẠT] ${errorMsg}`);
+        setLastAction(errorMsg);
+        toast.error(errorMsg);
         return;
       }
-      // ✅ GỌI API TẠI ĐÂY
+
+      console.log(`🔎 [BẬT QUẠT] Tìm device với location: "${location}"`);
+      
+      const device = findDevice('quạt', location);
+      
+      if (!device) {
+        const availableFans = permittedDevices
+          .filter((d) => d.name?.toLowerCase().includes('quạt'))
+          .map((d) => d.location)
+          .join(', ');
+        
+        const errorMsg = `❌ Không có quạt tại ${location}. Các vị trí có quạt: ${availableFans || 'không có'}`;
+        console.log(`❌ [BẬT QUẠT] ${errorMsg}`);
+        setLastAction(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
+      console.log(`✅ [BẬT QUẠT] Tìm thấy device [ID=${device.id}] - Gọi API...`);
       await updateDeviceMutation.mutateAsync({
         deviceId: device.id,
         state: true,
@@ -262,13 +426,33 @@ function VoiceControlPage() {
 
     // Lệnh: TẮT QUẠT
     if (lower.includes('tắt') && lower.includes('quạt')) {
-      const device = findDevice('fan', location || undefined);
-      if (!device) {
-        setLastAction('❌ Không tìm thấy quạt');
-        toast.error('Không tìm thấy quạt');
+      // ✅ KIỂM TRA: Không có location
+      if (!location) {
+        const errorMsg = '❌ Chưa xác định vị trí. Vui lòng nói rõ: phòng ngủ, cầu thang, phòng khách, phòng bếp hoặc sân';
+        console.log(`❌ [TẮT QUẠT] ${errorMsg}`);
+        setLastAction(errorMsg);
+        toast.error(errorMsg);
         return;
       }
-      // ✅ GỌI API TẠI ĐÂY
+
+      console.log(`🔎 [TẮT QUẠT] Tìm device với location: "${location}"`);
+      
+      const device = findDevice('quạt', location);
+      
+      if (!device) {
+        const availableFans = permittedDevices
+          .filter((d) => d.name?.toLowerCase().includes('quạt'))
+          .map((d) => d.location)
+          .join(', ');
+        
+        const errorMsg = `❌ Không có quạt tại ${location}. Các vị trí có quạt: ${availableFans || 'không có'}`;
+        console.log(`❌ [TẮT QUẠT] ${errorMsg}`);
+        setLastAction(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+
+      console.log(`✅ [TẮT QUẠT] Tìm thấy device [ID=${device.id}] - Gọi API...`);
       await updateDeviceMutation.mutateAsync({
         deviceId: device.id,
         state: false,
@@ -278,8 +462,11 @@ function VoiceControlPage() {
       return;
     }
 
-    setLastAction('❌ Không nhận diện được lệnh');
-    toast.error('Không nhận diện được lệnh');
+    // Không nhận diện được lệnh
+    const errorMsg = '❌ Không nhận diện được lệnh. Hãy thử: "Bật đèn phòng khách", "Tắt quạt phòng ngủ"';
+    console.log(`❌ [executeCommand] ${errorMsg}`);
+    setLastAction(errorMsg);
+    toast.error(errorMsg);
   };
 
   const handleStart = () => {
