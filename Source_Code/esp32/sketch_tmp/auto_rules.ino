@@ -76,7 +76,7 @@ void checkAutoRules() {
         triggerReason = "humLower";
         triggerLimit = myDevices[i].humLower;
         triggerActualValue = currentSensors.hum;
-      } else if (!myDevices[i].motionOff && currentSensors.motion) {
+      } else if (myDevices[i].motionOff && currentSensors.motion) {
         newState = false;
         triggerReason = "motionOff";
         triggerLimit = myDevices[i].motionOff;

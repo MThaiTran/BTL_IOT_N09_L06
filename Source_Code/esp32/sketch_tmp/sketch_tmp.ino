@@ -9,10 +9,10 @@
 
 
 
-#define MQTT_TOPIC_STATUS "esp32/pubStatus"           // Done
-#define MQTT_TOPIC_LOGS "esp32/pubLogs"               // Chek req
-#define MQTT_TOPIC_WARNS "esp32/pubWarnings"          //
-#define MQTT_TOPIC_DEVICES "esp32/subDevices"         // Check req
+#define MQTT_TOPIC_STATUS "esp32/status"           // Done
+#define MQTT_TOPIC_LOGS "esp32/logs"               // Chek req
+#define MQTT_TOPIC_WARNS "esp32/warnings"          //
+#define MQTT_TOPIC_DEVICES "esp32/devices"         // Check req
 #define MQTT_TOPIC_AVAILABILITY "esp32/availability"  // Check req
 
 // Running the code on your own require these parameters:
@@ -26,13 +26,14 @@
 #define DHT_PIN 25
 #define PIR_PIN 26
 #define DHT_TYPE DHT11
+#define RESET_PIN 0
 
 const int NUM_DEVICES = 6;
 
 Device myDevices[NUM_DEVICES] = {
   // ID, Pin, State, AutoMode, T_High, H_High, Mot_On, T_Low,  H_Low,  Mot_Off
   { 8, 23, false, false, NAN, NAN, false, NAN, NAN, false },
-  { 9, 22, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 9, 21, false, false, NAN, NAN, false, NAN, NAN, false },
   { 10, 19, false, false, NAN, NAN, false, NAN, NAN, false },
   { 11, 18, false, false, NAN, NAN, false, NAN, NAN, false },
   { 12, 17, false, false, NAN, NAN, false, NAN, NAN, false },
@@ -48,8 +49,8 @@ DHT dht(DHT_PIN, DHT_TYPE);
 
 const long interval = 2000;
 const long logInterval = 20000;
-const char* MQTT_WILL = "\"availability\": false";
-const char* MQTT_WILL_CONNECTED = "\"availability\": true";
+const char* MQTT_WILL = "{\"availability\": false}";
+const char* MQTT_WILL_CONNECTED = "{\"availability\": true}";
 
 unsigned long lastLogTime = 0;
 unsigned long lastStatusTime = 0;
@@ -135,23 +136,23 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  wm.resetSettings();
+  // wm.resetSettings();
 
 
-    // pinMode(RESET_PIN, INPUT_PULLUP);
+    pinMode(RESET_PIN, INPUT_PULLUP);
 
-    // if (digitalRead(RESET_PIN) == LOW) {
-    //   Serial.println("Reset Button Held...");
-    //   Serial.println("Erasing WiFi Settings in 3 seconds...");
-    //   delay(3000);
+    if (digitalRead(RESET_PIN) == LOW) {
+      Serial.println("Reset Button Held...");
+      Serial.println("Erasing WiFi Settings in 3 seconds...");
+      delay(3000);
 
-    //   if (digitalRead(RESET_PIN) == LOW) {
-    //     WiFiManager wm;
-    //     wm.resetSettings();
-    //     Serial.println("Settings Erased! Restarting...");
-    //     ESP.restart();
-    //   }
-    // }
+      if (digitalRead(RESET_PIN) == LOW) {
+        WiFiManager wm;
+        wm.resetSettings();
+        Serial.println("Settings Erased! Restarting...");
+        ESP.restart();
+      }
+    }
 
 
 
@@ -289,6 +290,7 @@ void publishSystemData(const char* topic) {
     d["id"] = myDevices[i].id;
     d["state"] = myDevices[i].state;
     d["autoMode"] = myDevices[i].autoMode;
+    d["status"] = "active";
   }
 
   String output;

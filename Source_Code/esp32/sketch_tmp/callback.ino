@@ -49,28 +49,28 @@ void callback(char* topic, byte* payload, unsigned int length) {
   // 4. Logic: AUTO or MANUAL
 
   // CASE 1: MANUAL
-  bool isManualRequest = (doc.containsKey("autoMode") && doc["autoMode"] == false) || doc.containsKey("state");
+  bool isManualRequest = (doc.containsKey("autoMode") && doc["autoMode"] == false);
   if (isManualRequest) {
-      targetDevice->autoMode = false;
+    targetDevice->autoMode = false;
 
-      if (doc.containsKey("state")) {
-        bool reqState = doc["state"];
+    if (doc.containsKey("state")) {
+      bool reqState = doc["state"];
 
-        if (targetDevice->state != reqState) {
-          targetDevice->state = reqState;
-          digitalWrite(targetDevice->pin, reqState ? HIGH : LOW);
-          stateChanged = true;
-        }
+      if (targetDevice->state != reqState) {
+        targetDevice->state = reqState;
+        digitalWrite(targetDevice->pin, reqState ? HIGH : LOW);
+        stateChanged = true;
       }
-
-      targetDevice->tempHigher = NAN;
-      targetDevice->humHigher = NAN;
-      targetDevice->motionOn = false;
-
-      targetDevice->tempLower = NAN;
-      targetDevice->humLower = NAN;
-      targetDevice->motionOff = false;
     }
+
+    targetDevice->tempHigher = NAN;
+    targetDevice->humHigher = NAN;
+    targetDevice->motionOn = false;
+
+    targetDevice->tempLower = NAN;
+    targetDevice->humLower = NAN;
+    targetDevice->motionOff = false;
+  }
 
   // CASE 2: AUTO
   else {
@@ -85,6 +85,47 @@ void callback(char* topic, byte* payload, unsigned int length) {
     targetDevice->motionOff = doc.containsKey("motionOff") ? doc["motionOff"].as<bool>() : false;
 
     Serial.println("autoMode updated");
+
+
+    // PRINT STATUS
+    Serial.println("--------------------------------");
+    Serial.printf("Device %d Auto-Rules Configured:\n", targetDevice->id);
+    
+    bool hasTrigger = false;
+
+    if (!isnan(targetDevice->tempHigher)) {
+      Serial.print(" - Turn ON if Temp >= ");
+      Serial.println(targetDevice->tempHigher);
+      hasTrigger = true;
+    }
+    if (!isnan(targetDevice->tempLower)) {
+      Serial.print(" - Turn ON if Temp <= ");
+      Serial.println(targetDevice->tempLower);
+      hasTrigger = true;
+    }
+    if (!isnan(targetDevice->humHigher)) {
+      Serial.print(" - Turn ON if Hum  >= ");
+      Serial.println(targetDevice->humHigher);
+      hasTrigger = true;
+    }
+    if (!isnan(targetDevice->humLower)) {
+      Serial.print(" - Turn ON if Hum  <= ");
+      Serial.println(targetDevice->humLower);
+      hasTrigger = true;
+    }
+    if (targetDevice->motionOn) {
+      Serial.println(" - Turn ON if Motion DETECTED");
+      hasTrigger = true;
+    }
+    if (targetDevice->motionOff) {
+      Serial.println(" - Turn ON if Motion STOPPED");
+      hasTrigger = true;
+    }
+
+    if (!hasTrigger) {
+      Serial.println(" - (No active triggers set)");
+    }
+    Serial.println("--------------------------------");
   }
 
   if (stateChanged) {
