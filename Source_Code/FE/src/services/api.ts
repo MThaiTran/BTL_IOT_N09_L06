@@ -81,7 +81,7 @@ export const devicesAPI = {
   create: (data: CreateDeviceDto): Promise<{ data: Device }> =>
     api.post(import.meta.env.VITE_DEVICE_API_URL, data),
 
-  upload: (id: number, data: UpdateDeviceDto): Promise<{ data: Device }> =>
+  update: (id: number, data: UpdateDeviceDto): Promise<{ data: Device }> =>
     api.patch(`${import.meta.env.VITE_DEVICE_API_URL}/${id}`, data),
 
   delete: (id: number): Promise<void> =>
@@ -157,6 +157,14 @@ export const filehandler = {
 
   getAll: (): Promise<{ data: FileDto[] }> =>
     api.get(`${import.meta.env.VITE_GET_ALL_FILES_API_URL}`),
+};
+
+export const mqttAPI = {
+  publishOta: (version: number, otaData: string) =>
+    api.post(`${import.meta.env.VITE_MQTT_OTA_API_URL}`, {
+      version,
+      otaData,
+    }),
 };
 
 export const tmpFileOrgApi = {

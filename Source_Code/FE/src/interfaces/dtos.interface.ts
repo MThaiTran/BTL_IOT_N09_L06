@@ -49,7 +49,7 @@ export interface UpdateDeviceDto {
   status?: number;
   deviceTypeId?: number;
   state: boolean;
-  autoMode: boolean;
+  autoMode?: boolean;
 }
 
 export interface CreateUserDto {

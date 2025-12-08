@@ -62,18 +62,15 @@ function LogsPage() {
   // Lọc logs dựa trên role
   useEffect(() => {
     if (!isLoadingPermissions && logs) {
-      if (userRole === UserRole.ADMIN) {
+      if (userRole === UserRole.ADMIN || userRole === UserRole.HOUSE_OWNER) {
         // Admin xem tất cả logs
         setFilteredLogs(logs);
-      } else if (permittedDeviceIds.length > 0) {
+      } else if (userRole === UserRole.GUEST) {
         // Guest/House Owner: chỉ xem logs của thiết bị được cấp
         const filtered = logs.filter((log) =>
           permittedDeviceIds.includes(log.deviceId)
         );
         setFilteredLogs(filtered);
-      } else if (permittedDeviceIds.length === 0) {
-        // Không có quyền → không hiển thị log
-        setFilteredLogs([]);
       }
     }
   }, [logs, permittedDeviceIds, isLoadingPermissions, userRole]);

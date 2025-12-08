@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { filehandler, tmpFileOrgApi } from "../services/api";
+import { filehandler, mqttAPI, tmpFileOrgApi } from "../services/api";
 import { UploadCloud, CheckCircle2, X, Download } from "lucide-react";
 import toast from "react-hot-toast";
 import { FileDto } from "../interfaces/dtos.interface";
@@ -79,8 +79,11 @@ function FirmwareUpdatePage() {
       );
       console.log("URL Before replace:", rawUrl);
       console.log("URL After replace:", replacedUrl);
-
-      console.log("MQTT payload (mock):");
+      const otaDataResponse = await mqttAPI.publishOta(
+        parseInt(versionInput.trim()), // ============================= Co the loi neu nhap linh tinh
+        replacedUrl
+      );
+      console.log("MQTT payload (mock):", otaDataResponse.data);
 
       // Refresh file list after upload
       refetchFiles();

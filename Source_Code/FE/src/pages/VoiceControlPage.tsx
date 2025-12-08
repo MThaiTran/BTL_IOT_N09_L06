@@ -1,13 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { devicesAPI, userDevicesAPI } from '../services/api';
-import { Device } from '../interfaces/entities.interface';
-import { getCurrentUserId, getCurrentUserRole } from '../utils/roles';
-import { UserRole } from '../interfaces/enum';
-import { Mic, Square, Volume2, Info, AlertCircle, Check, MapPin } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { devicesAPI, userDevicesAPI } from "../services/api";
+import { Device } from "../interfaces/entities.interface";
+import { getCurrentUserId, getCurrentUserRole } from "../utils/roles";
+import { UserRole } from "../interfaces/enum";
+import {
+  Mic,
+  Square,
+  Volume2,
+  Info,
+  AlertCircle,
+  Check,
+  MapPin,
+} from "lucide-react";
+import toast from "react-hot-toast";
 
-type RecognitionStatus = 'idle' | 'listening';
+type RecognitionStatus = "idle" | "listening";
 
 declare global {
   interface Window {
@@ -17,21 +25,27 @@ declare global {
 }
 
 const commandHints = [
-  'Bật đèn phòng khách',
-  'Bật quạt phòng bếp',
-  'Bật đèn cầu thang',
-  'Tắt quạt phòng bếp',
+  "Bật đèn phòng khách",
+  "Bật quạt phòng bếp",
+  "Bật đèn cầu thang",
+  "Tắt quạt phòng bếp",
 ];
 
 // Danh sách vị trí đèn có thể bật/tắt
-const lightLocations = ['phòng ngủ', 'cầu thang', 'phòng khách', 'phòng bếp', 'sân'];
+const lightLocations = [
+  "phòng ngủ",
+  "cầu thang",
+  "phòng khách",
+  "phòng bếp",
+  "sân",
+];
 
 function VoiceControlPage() {
   const userId = getCurrentUserId();
   const userRole = getCurrentUserRole();
-  const [status, setStatus] = useState<RecognitionStatus>('idle');
-  const [transcript, setTranscript] = useState('');
-  const [lastAction, setLastAction] = useState('Chưa có lệnh nào');
+  const [status, setStatus] = useState<RecognitionStatus>("idle");
+  const [transcript, setTranscript] = useState("");
+  const [lastAction, setLastAction] = useState("Chưa có lệnh nào");
   const [isSupported, setIsSupported] = useState(true);
   const [permittedDevices, setPermittedDevices] = useState<Device[]>([]);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
@@ -39,45 +53,29 @@ function VoiceControlPage() {
 
   // Lấy danh sách thiết bị được cấp quyền (chỉ cho Guest & House Owner)
   const { data: userDevices } = useQuery({
-    queryKey: ['userDevices', userId],
+    queryKey: ["userDevices", userId],
     queryFn: () => userDevicesAPI.getOne(userId!).then((res) => res.data),
-    enabled:
-      !!userId &&
-      (userRole === UserRole.GUEST || userRole === UserRole.HOUSE_OWNER),
   });
 
   // Lấy chi tiết tất cả devices
   const { data: allDevices } = useQuery({
-    queryKey: ['devices'],
+    queryKey: ["devices"],
     queryFn: () => devicesAPI.getAll().then((res) => res.data),
   });
 
   // Filter devices được cấp quyền
   useEffect(() => {
-    if (userRole === UserRole.ADMIN) {
-      // Admin xem tất cả devices (không phải cảm biến)
-      if (allDevices) {
-        const controlDevices = allDevices.filter(
-          (d) => !d.name?.toLowerCase().includes('cảm biến')
-        );
-        setPermittedDevices(controlDevices);
-      }
-      setIsLoadingPermissions(false);
-    } else if (userDevices && allDevices) {
+    if (userDevices && allDevices) {
       // Guest/House Owner: chỉ xem thiết bị được cấp (không phải cảm biến)
       const userDeviceIds = userDevices.map((ud: any) => ud.deviceId);
-      const permitted = allDevices.filter(
-        (d) =>
-          userDeviceIds.includes(d.id) &&
-          !d.name?.toLowerCase().includes('cảm biến')
-      );
+      const permitted = allDevices.filter((d) => userDeviceIds.includes(d.id));
       setPermittedDevices(permitted);
       setIsLoadingPermissions(false);
     }
   }, [userDevices, allDevices, userRole]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -85,7 +83,7 @@ function VoiceControlPage() {
         return;
       }
       const recognition = new SpeechRecognition();
-      recognition.lang = 'vi-VN';
+      recognition.lang = "vi-VN";
       recognition.continuous = false;
       recognition.interimResults = false;
 
@@ -98,12 +96,12 @@ function VoiceControlPage() {
       };
 
       recognition.onerror = () => {
-        toast.error('Có lỗi khi nhận dạng giọng nói');
-        setStatus('idle');
+        toast.error("Có lỗi khi nhận dạng giọng nói");
+        setStatus("idle");
       };
 
       recognition.onend = () => {
-        setStatus('idle');
+        setStatus("idle");
       };
 
       recognitionRef.current = recognition;
@@ -112,41 +110,37 @@ function VoiceControlPage() {
 
   // Tìm thiết bị dựa trên tên và vị trí
   const findDevice = (
-    deviceType: 'light' | 'fan',
+    deviceType: "light" | "fan",
     location?: string
   ): Device | null => {
-    if (deviceType === 'light') {
+    console.log("Finding device:", location);
+    console.log("Permitted devices:", permittedDevices);
+    if (!location || location === null || location === undefined) return null;
+
+    if (deviceType === "light") {
       // Đèn: tìm theo vị trí
       if (location) {
         return (
           permittedDevices.find(
             (d) =>
               d.location?.toLowerCase().includes(location.toLowerCase()) &&
-              d.name?.toLowerCase().includes('đèn')
+              d.name?.toLowerCase().includes("đèn")
           ) || null
         );
       }
-      // Nếu không chỉ định vị trí, lấy đèn đầu tiên tìm được
-      return (
-        permittedDevices.find((d) => d.name?.toLowerCase().includes('đèn')) ||
-        null
-      );
-    } else if (deviceType === 'fan') {
+    } else if (deviceType === "fan") {
       // Quạt: tìm theo vị trí
       if (location) {
         return (
           permittedDevices.find(
             (d) =>
               d.location?.toLowerCase().includes(location.toLowerCase()) &&
-              d.name?.toLowerCase().includes('quạt')
+              d.name?.toLowerCase().includes("quạt")
           ) || null
         );
       }
-      return (
-        permittedDevices.find((d) => d.name?.toLowerCase().includes('quạt')) ||
-        null
-      );
     }
+
     return null;
   };
 
@@ -166,92 +160,116 @@ function VoiceControlPage() {
     const location = extractLocation(text);
 
     // Xử lý lệnh bật đèn
-    if (lower.includes('bật') && lower.includes('đèn')) {
-      const lightDevice = findDevice('light', location || undefined);
+    if (lower.includes("bật") && lower.includes("đèn")) {
+      const lightDevice = findDevice("light", location || undefined);
       if (!lightDevice) {
-        return location
-          ? `Không tìm thấy đèn ở ${location} hoặc bạn không có quyền điều khiển`
-          : 'Bạn không có quyền điều khiển đèn nào';
+        return `Không tìm thấy đèn ở VT:${location} || ${lightDevice}hoặc bạn không có quyền điều khiển`;
+      } else {
+        devicesAPI.update(lightDevice.id, {
+          state: true,
+          autoMode: lightDevice.autoMode,
+        });
       }
       return `Đã bật đèn ${lightDevice.location} thành công`;
     }
 
     // Xử lý lệnh tắt đèn
-    if (lower.includes('tắt') && lower.includes('đèn')) {
-      const lightDevice = findDevice('light', location || undefined);
+    if (lower.includes("tắt") && lower.includes("đèn")) {
+      const lightDevice = findDevice("light", location || undefined);
       if (!lightDevice) {
-        return location
-          ? `Không tìm thấy đèn ở ${location} hoặc bạn không có quyền điều khiển`
-          : 'Bạn không có quyền điều khiển đèn nào';
+        return `Không tìm thấy đèn ở ${location} hoặc bạn không có quyền điều khiển`;
+      } else {
+        devicesAPI.update(lightDevice.id, {
+          state: false,
+          autoMode: lightDevice.autoMode,
+        });
       }
       return `Đã tắt đèn ${lightDevice.location} thành công`;
     }
 
     // Xử lý lệnh bật quạt
-    if (lower.includes('bật') && lower.includes('quạt')) {
-      const fanDevice = findDevice('fan', location || undefined);
+    if (lower.includes("bật") && lower.includes("quạt")) {
+      const fanDevice = findDevice("fan", location || undefined);
       if (!fanDevice) {
-        return location
-          ? `Không tìm thấy quạt ở ${location} hoặc bạn không có quyền điều khiển`
-          : 'Bạn không có quyền điều khiển quạt nào';
+        return `Không tìm thấy quạt ở ${location} hoặc bạn không có quyền điều khiển`;
+      } else {
+        devicesAPI.update(fanDevice.id, {
+          state: true,
+          autoMode: fanDevice.autoMode,
+        });
       }
       return `Đã bật quạt ${fanDevice.location} thành công`;
     }
 
     // Xử lý lệnh tắt quạt
-    if (lower.includes('tắt') && lower.includes('quạt')) {
-      const fanDevice = findDevice('fan', location || undefined);
+    if (lower.includes("tắt") && lower.includes("quạt")) {
+      const fanDevice = findDevice("fan", location || undefined);
       if (!fanDevice) {
-        return location
-          ? `Không tìm thấy quạt ở ${location} hoặc bạn không có quyền điều khiển`
-          : 'Bạn không có quyền điều khiển quạt nào';
+        return `Không tìm thấy quạt ở ${location} hoặc bạn không có quyền điều khiển`;
+      } else {
+        devicesAPI.update(fanDevice.id, {
+          state: false,
+          autoMode: fanDevice.autoMode,
+        });
       }
       return `Đã tắt quạt ${fanDevice.location} thành công`;
     }
 
     // Xử lý lệnh tăng tốc độ quạt
-    if (lower.includes('tăng') && (lower.includes('quạt') || lower.includes('tốc'))) {
-      const fanDevice = findDevice('fan', location || undefined);
+    if (
+      lower.includes("tăng") &&
+      (lower.includes("quạt") || lower.includes("tốc"))
+    ) {
+      const fanDevice = findDevice("fan", location || undefined);
       if (!fanDevice) {
-        return 'Không tìm thấy quạt hoặc bạn không có quyền điều khiển';
+        return "Không tìm thấy quạt hoặc bạn không có quyền điều khiển";
       }
       return `Đã tăng tốc độ quạt ${fanDevice.location}`;
     }
 
     // Xử lý lệnh giảm tốc độ quạt
-    if (lower.includes('giảm') && (lower.includes('quạt') || lower.includes('tốc'))) {
-      const fanDevice = findDevice('fan', location || undefined);
+    if (
+      lower.includes("giảm") &&
+      (lower.includes("quạt") || lower.includes("tốc"))
+    ) {
+      const fanDevice = findDevice("fan", location || undefined);
       if (!fanDevice) {
-        return 'Không tìm thấy quạt hoặc bạn không có quyền điều khiển';
+        return "Không tìm thấy quạt hoặc bạn không có quyền điều khiển";
       }
       return `Đã giảm tốc độ quạt ${fanDevice.location}`;
     }
 
     // Xử lý lệnh điều chỉnh nhiệt độ
-    if (lower.includes('giảm') && (lower.includes('nhiệt') || lower.includes('độ'))) {
-      return 'Đã giảm nhiệt độ về mức an toàn';
+    if (
+      lower.includes("giảm") &&
+      (lower.includes("nhiệt") || lower.includes("độ"))
+    ) {
+      return "Đã giảm nhiệt độ về mức an toàn";
     }
 
-    if (lower.includes('tăng') && (lower.includes('nhiệt') || lower.includes('độ'))) {
-      return 'Đã tăng nhiệt độ theo yêu cầu';
+    if (
+      lower.includes("tăng") &&
+      (lower.includes("nhiệt") || lower.includes("độ"))
+    ) {
+      return "Đã tăng nhiệt độ theo yêu cầu";
     }
 
-    return 'Không nhận diện được lệnh, vui lòng thử lại';
+    return "Không nhận diện được lệnh, vui lòng thử lại";
   };
 
   const handleStart = () => {
     if (!recognitionRef.current) {
-      toast.error('Trình duyệt của bạn không hỗ trợ điều khiển bằng giọng nói');
+      toast.error("Trình duyệt của bạn không hỗ trợ điều khiển bằng giọng nói");
       return;
     }
-    setStatus('listening');
-    setTranscript('');
+    setStatus("listening");
+    setTranscript("");
     recognitionRef.current.start();
   };
 
   const handleStop = () => {
     recognitionRef.current?.stop();
-    setStatus('idle');
+    setStatus("idle");
   };
 
   if (isLoadingPermissions) {
@@ -288,13 +306,17 @@ function VoiceControlPage() {
         permittedDevices.length === 0 && (
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <div className="flex items-start gap-3">
-              <AlertCircle className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" size={18} />
+              <AlertCircle
+                className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
+                size={18}
+              />
               <div>
                 <p className="font-semibold text-blue-900 dark:text-blue-300">
                   Không có thiết bị để điều khiển
                 </p>
                 <p className="text-sm text-blue-800 dark:text-blue-400 mt-1">
-                  Bạn chưa được cấp quyền điều khiển bất kỳ thiết bị nào. Vui lòng liên hệ quản trị viên.
+                  Bạn chưa được cấp quyền điều khiển bất kỳ thiết bị nào. Vui
+                  lòng liên hệ quản trị viên.
                 </p>
               </div>
             </div>
@@ -307,13 +329,17 @@ function VoiceControlPage() {
             <div>
               <p className="text-sm text-gray-500">Trạng thái</p>
               <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                {status === 'listening' ? 'Đang lắng nghe...' : 'Sẵn sàng'}
+                {status === "listening" ? "Đang lắng nghe..." : "Sẵn sàng"}
               </p>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={handleStart}
-                disabled={!isSupported || status === 'listening' || permittedDevices.length === 0}
+                disabled={
+                  !isSupported ||
+                  status === "listening" ||
+                  permittedDevices.length === 0
+                }
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 <Mic size={18} />
@@ -321,7 +347,7 @@ function VoiceControlPage() {
               </button>
               <button
                 onClick={handleStop}
-                disabled={status === 'idle'}
+                disabled={status === "idle"}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 <Square size={18} />
@@ -333,7 +359,7 @@ function VoiceControlPage() {
           <div className="mb-6">
             <p className="text-sm text-gray-500 mb-2">Lệnh vừa nói</p>
             <div className="min-h-[70px] p-4 bg-gray-50 dark:bg-gray-900 rounded-xl text-gray-800 dark:text-gray-200">
-              {transcript || '---'}
+              {transcript || "---"}
             </div>
           </div>
 
@@ -350,14 +376,14 @@ function VoiceControlPage() {
             <Volume2 className="text-primary-600" size={22} />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               {userRole === UserRole.ADMIN
-                ? 'Lệnh gợi ý'
-                : 'Thiết bị có thể điều khiển'}
+                ? "Lệnh gợi ý"
+                : "Thiết bị có thể điều khiển"}
             </h2>
           </div>
           <p className="text-sm text-gray-500 mb-4">
             {userRole === UserRole.ADMIN
-              ? 'Thử các câu lệnh mẫu sau để điều khiển thiết bị:'
-              : 'Bạn có thể điều khiển các thiết bị sau:'}
+              ? "Thử các câu lệnh mẫu sau để điều khiển thiết bị:"
+              : "Bạn có thể điều khiển các thiết bị sau:"}
           </p>
           <ul className="space-y-3 max-h-[400px] overflow-y-auto">
             {userRole === UserRole.ADMIN ? (
@@ -398,4 +424,3 @@ function VoiceControlPage() {
 }
 
 export default VoiceControlPage;
-

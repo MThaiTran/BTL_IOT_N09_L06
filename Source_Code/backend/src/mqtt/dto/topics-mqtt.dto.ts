@@ -43,3 +43,8 @@ export interface MqttDeviceTopicDto {
   motionOn?: boolean;
   motionOff?: boolean;
 }
+
+export interface MqttOtaTopicDto {
+  version: number;
+  url: string;
+}

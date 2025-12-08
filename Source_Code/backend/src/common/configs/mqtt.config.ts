@@ -13,5 +13,6 @@ export const MQTT_CONFIG = {
   },
   PUB_TOPICS: {
     DEVICES: process.env.MQTT_DEVICES_TOPIC || 'devices',
+    OTA: process.env.MQTT_OTA_TOPIC || 'ota',
   },
 };

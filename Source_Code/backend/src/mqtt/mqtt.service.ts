@@ -7,7 +7,7 @@ import { SystemLogsService } from 'src/modules/system-logs/system-logs.service';
 import { EDeviceLog } from 'src/common/enum/enum';
 import { DeepPartial } from 'typeorm';
 import { Device } from 'src/modules/devices/entities/device.entity';
-import { MqttDeviceTopicDto } from './dto/topics-mqtt.dto';
+import { MqttDeviceTopicDto, MqttOtaTopicDto } from './dto/topics-mqtt.dto';
 
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {
@@ -134,15 +134,37 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       state: updateDto.state,
       autoMode: updateDto.autoMode,
       status: updateDto.status,
-      tempHigher: updateDto.thresholdHigh,
-      tempLower: updateDto.thresholdLow,
+      // tempHigher: updateDto.thresholdHigh,
+      // tempLower: updateDto.thresholdLow,
     } as MqttDeviceTopicDto;
+
+    if (deviceId === 12) {
+      data.motionOn = updateDto.thresholdHigh === 1 ? true : false;
+    } else {
+      data.tempHigher = updateDto.thresholdHigh;
+      data.tempLower = updateDto.thresholdLow;
+    }
 
     console.log('Publishing MQTT message...', topic, data);
     if (this.client && this.client.connected) {
       this.client.publish(topic, JSON.stringify(data), { qos: 2 }); // Qos  2 đảm bảo tin nhắn được nhận ít nhất một lần
       console.log(
         `[MQTT Publish] Topic: ${topic} | Message: ${JSON.stringify(data)}`,
+      );
+    }
+  }
+
+  public publishOta(version: number, otaData: string) {
+    const topic = MQTT_CONFIG.PUB_TOPICS.OTA;
+    console.log('Publishing OTA MQTT message...', topic, otaData);
+    if (this.client && this.client.connected) {
+      this.client.publish(
+        topic,
+        JSON.stringify({ version: version, url: otaData }),
+        { qos: 2 },
+      ); // Qos  2 đảm bảo tin nhắn được nhận ít nhất một lần
+      console.log(
+        `[MQTT Publish] Topic: ${topic} | Message: ${JSON.stringify({ version: version, url: otaData })}`,
       );
     }
   }
