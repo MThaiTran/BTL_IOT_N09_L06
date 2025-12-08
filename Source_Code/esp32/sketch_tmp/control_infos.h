@@ -15,3 +15,10 @@ struct Device {
   float humLower;
   bool  motionOff;
 };
+
+struct SensorData {
+  float temp;
+  float hum;
+  bool motion;
+  bool valid; // true if data was read successfully
+};

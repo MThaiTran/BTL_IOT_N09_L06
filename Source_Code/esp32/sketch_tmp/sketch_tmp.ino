@@ -39,6 +39,8 @@ Device myDevices[NUM_DEVICES] = {
   { 13, 16, 0, 0, NAN, NAN, 0, NAN, NAN, 0 }
 };
 
+SensorData currentSensors = { NAN, NAN, false, false };
+
 WiFiManager wm;
 WiFiClientSecure espClient;
 PubSubClient client(espClient);
@@ -50,7 +52,7 @@ const char* MQTT_WILL = "\"availability\": false";
 const char* MQTT_WILL_CONNECTED = "\"availability\": true";
 
 unsigned long lastLogTime = 0;
-unsigned long lastMsgTime = 0;
+unsigned long lastStatusTime = 0;
 
 // HiveMQ Cloud Let's Encrypt CA certificate
 static const char* root_ca PROGMEM = R"EOF(
@@ -133,27 +135,28 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
+  wm.resetSettings();
 
 
-  // pinMode(RESET_PIN, INPUT_PULLUP);
+    // pinMode(RESET_PIN, INPUT_PULLUP);
 
-  // if (digitalRead(RESET_PIN) == LOW) {
-  //   Serial.println("Reset Button Held...");
-  //   Serial.println("Erasing WiFi Settings in 3 seconds...");
-  //   delay(3000);
+    // if (digitalRead(RESET_PIN) == LOW) {
+    //   Serial.println("Reset Button Held...");
+    //   Serial.println("Erasing WiFi Settings in 3 seconds...");
+    //   delay(3000);
 
-  //   if (digitalRead(RESET_PIN) == LOW) {
-  //     WiFiManager wm;
-  //     wm.resetSettings();
-  //     Serial.println("Settings Erased! Restarting...");
-  //     ESP.restart();
-  //   }
-  // }
+    //   if (digitalRead(RESET_PIN) == LOW) {
+    //     WiFiManager wm;
+    //     wm.resetSettings();
+    //     Serial.println("Settings Erased! Restarting...");
+    //     ESP.restart();
+    //   }
+    // }
 
 
 
-  // Init Sensors
-  dht.begin();
+    // Init Sensors
+    dht.begin();
   pinMode(PIR_PIN, INPUT);
 
   for (int i = 0; i < NUM_DEVICES; i++) {
@@ -267,6 +270,40 @@ void publishStatus() {
 
 
 
+void publishSystemData(const char* topic) {
+  if (!currentSensors.valid) {
+    Serial.println("Cannot publish data: Sensor read invalid.");
+    return;
+  }
+
+  DynamicJsonDocument doc(2048);
+
+  JsonObject sensors = doc.createNestedObject("sensors");
+  sensors["temp"] = currentSensors.temp;
+  sensors["hum"] = currentSensors.hum;
+  sensors["motion"] = currentSensors.motion;
+
+  JsonArray devices = doc.createNestedArray("devices");
+  for (int i = 0; i < NUM_DEVICES; i++) {
+    JsonObject d = devices.createNestedObject();
+    d["id"] = myDevices[i].id;
+    d["state"] = myDevices[i].state;
+    d["autoMode"] = myDevices[i].autoMode;
+  }
+
+  String output;
+  serializeJson(doc, output);
+
+  Serial.print(">> Publishing to [");
+  Serial.print(topic);
+  Serial.print("]: ");
+  Serial.println(output.substring(0, 50) + "...");
+
+  client.publish(topic, output.c_str());
+}
+
+
+
 void loop() {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi lost! Reconnecting...");
@@ -288,14 +325,29 @@ void loop() {
 
   unsigned long now = millis();
 
-  if (now - lastLogTime > logInterval) {
-    lastLogTime = now;
-    publishLog();
-  }
+  if (now - lastStatusTime > interval) {
+    lastStatusTime = now;
 
-  if (now - lastMsgTime > interval) {
-    lastMsgTime = now;
+    float t = dht.readTemperature();
+    float h = dht.readHumidity();
+    bool mVal = digitalRead(PIR_PIN);
+
+    if (isnan(t) || isnan(h)) {
+      Serial.println("Sensor Read Failed!");
+      currentSensors.valid = false;
+    } else {
+      currentSensors.temp = t;
+      currentSensors.hum = h;
+      currentSensors.motion = (mVal == HIGH);
+      currentSensors.valid = true;
+    }
+
     checkAutoRules();
-    publishStatus();
+    publishSystemData(MQTT_TOPIC_STATUS);
+
+    if (now - lastLogTime > logInterval) {
+      lastLogTime = now;
+      publishSystemData(MQTT_TOPIC_LOGS);
+    }
   }
 }

@@ -1,7 +1,9 @@
 void checkAutoRules() {
-  float currentHum = dht.readHumidity();
-  float currentTemp = dht.readTemperature();
-  int currentMotion = digitalRead(PIR_PIN);
+  // float currentHum = dht.readHumidity();
+  // float currentTemp = dht.readTemperature();
+  // int currentMotion = digitalRead(PIR_PIN);
+
+  if (!currentSensors.valid) return;
 
   bool anyDeviceChanged = false;
 
@@ -17,64 +19,64 @@ void checkAutoRules() {
 
 
     if (currentState == false) {
-      if (!isnan(myDevices[i].tempHigher) && currentTemp >= myDevices[i].tempHigher) {
+      if (!isnan(myDevices[i].tempHigher) && currentSensors.temp >= myDevices[i].tempHigher) {
         newState = true;
         triggerReason = "tempHigher";
         triggerLimit = myDevices[i].tempHigher;
-        triggerActualValue = currentTemp;
-      } else if (!isnan(myDevices[i].humHigher) && currentHum >= myDevices[i].humHigher) {
+        triggerActualValue = currentSensors.temp;
+      } else if (!isnan(myDevices[i].humHigher) && currentSensors.hum >= myDevices[i].humHigher) {
         newState = true;
         triggerReason = "humHigher";
         triggerLimit = myDevices[i].humHigher;
-        triggerActualValue = currentHum;
-      } else if (myDevices[i].motionOn && currentMotion) {
+        triggerActualValue = currentSensors.hum;
+      } else if (myDevices[i].motionOn && currentSensors.motion) {
         newState = true;
         triggerReason = "motionOn";
         triggerLimit = true;
         triggerActualValue = true;
-      } else if (!isnan(myDevices[i].tempLower) && currentTemp <= myDevices[i].tempLower) {
+      } else if (!isnan(myDevices[i].tempLower) && currentSensors.temp <= myDevices[i].tempLower) {
         newState = false;
         triggerReason = "tempLower";
         triggerLimit = myDevices[i].tempLower;
-        triggerActualValue = currentTemp;
-      } else if (!isnan(myDevices[i].humLower) && currentHum <= myDevices[i].humLower) {
+        triggerActualValue = currentSensors.temp;
+      } else if (!isnan(myDevices[i].humLower) && currentSensors.hum <= myDevices[i].humLower) {
         newState = false;
         triggerReason = "humLower";
         triggerLimit = myDevices[i].humLower;
-        triggerActualValue = currentHum;
-      } else if (myDevices[i].motionOff && !currentMotion) {
+        triggerActualValue = currentSensors.hum;
+      } else if (myDevices[i].motionOff && !currentSensors.motion) {
         newState = false;
         triggerReason = "motionOff";
         triggerLimit = false;
         triggerActualValue = false;
       }
     } else {
-      if (!isnan(myDevices[i].tempHigher) && currentTemp < myDevices[i].tempHigher) {
+      if (!isnan(myDevices[i].tempHigher) && currentSensors.temp < myDevices[i].tempHigher) {
         newState = true;
         triggerReason = "tempHigher";
         triggerLimit = myDevices[i].tempHigher;
-        triggerActualValue = currentTemp;
-      } else if (!isnan(myDevices[i].humHigher) && currentHum < myDevices[i].humHigher) {
+        triggerActualValue = currentSensors.temp;
+      } else if (!isnan(myDevices[i].humHigher) && currentSensors.hum < myDevices[i].humHigher) {
         newState = true;
         triggerReason = "humHigher";
         triggerLimit = myDevices[i].humHigher;
-        triggerActualValue = currentHum;
-      } else if (myDevices[i].motionOn && !currentMotion) {
+        triggerActualValue = currentSensors.hum;
+      } else if (myDevices[i].motionOn && !currentSensors.motion) {
         newState = true;
         triggerReason = "motionOn";
         triggerLimit = true;
         triggerActualValue = true;
-      } else if (!isnan(myDevices[i].tempLower) && currentTemp > myDevices[i].tempLower) {
+      } else if (!isnan(myDevices[i].tempLower) && currentSensors.temp > myDevices[i].tempLower) {
         newState = false;
         triggerReason = "tempLower";
         triggerLimit = myDevices[i].tempLower;
-        triggerActualValue = currentTemp;
-      } else if (!isnan(myDevices[i].humLower) && currentHum > myDevices[i].humLower) {
+        triggerActualValue = currentSensors.temp;
+      } else if (!isnan(myDevices[i].humLower) && currentSensors.hum > myDevices[i].humLower) {
         newState = false;
         triggerReason = "humLower";
         triggerLimit = myDevices[i].humLower;
-        triggerActualValue = currentHum;
-      } else if (!myDevices[i].motionOff && currentMotion) {
+        triggerActualValue = currentSensors.hum;
+      } else if (!myDevices[i].motionOff && currentSensors.motion) {
         newState = false;
         triggerReason = "motionOff";
         triggerLimit = false;
