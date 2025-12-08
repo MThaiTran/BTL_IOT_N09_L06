@@ -125,11 +125,12 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   // Có thể thêm phương thức public để các Service khác publish tin nhắn nếu cần
   public publish(
     topic: string = MQTT_CONFIG.PUB_TOPICS.DEVICES,
+    deviceId: number,
     updateDto: DeepPartial<Device>,
   ) {
     // Data preprocessing
     const data: MqttDeviceTopicDto = {
-      id: updateDto.id,
+      id: deviceId,
       state: updateDto.state,
       autoMode: updateDto.autoMode,
       status: updateDto.status,

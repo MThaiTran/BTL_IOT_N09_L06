@@ -98,3 +98,7 @@ export interface WarningTopicDto {
   thresholdValue: number;
   currentValue: number;
 }
+
+export interface AvaialbilityTopicDto {
+  availability: boolean;
+}

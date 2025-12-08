@@ -2,7 +2,12 @@
 import { useEffect, useState, useRef } from "react"; // Thêm useRef
 import mqtt from "mqtt";
 import { MQTT_CONFIG } from "../config/mqttConfig";
-import { StatusTopicDto } from "../interfaces/dtos.interface";
+import {
+  AvaialbilityTopicDto,
+  StatusTopicDto,
+} from "../interfaces/dtos.interface";
+import { set } from "date-fns";
+import { te } from "date-fns/locale";
 
 function handleMessage(topic: string, message: string) {
   console.log(`Received message on topic ${topic}: ${message}`);
@@ -11,6 +16,7 @@ function handleMessage(topic: string, message: string) {
 export const useMqttData = () => {
   const [statusData, setStatusData] = useState<StatusTopicDto>();
   const [status, setStatus] = useState<string>("Connecting...");
+  const [availabilityData, setAvailabilityData] = useState<boolean>();
 
   // Dùng useRef để giữ kết nối client mà không gây render lại
   const clientRef = useRef<mqtt.MqttClient | null>(null);
@@ -34,16 +40,43 @@ export const useMqttData = () => {
     });
 
     client.on("message", (topic, message) => {
-      console.log(`Received: ${message.toString()} from ${topic}`);
-      try {
-        const parsedData = JSON.parse(message.toString());
-        if (topic === MQTT_CONFIG.topics.status) {
-          setStatusData(parsedData);
+      console.log(
+        `Received: ${
+          // (JSON.parse(message.toString()) as AvaialbilityTopicDto).availability
+          message.toString()
+        } from ${topic}`
+      );
+
+      if (topic === MQTT_CONFIG.topics.availability) {
+        setAvailabilityData(
+          (JSON.parse(message.toString()) as AvaialbilityTopicDto).availability
+        );
+        const tempAvailability = (
+          JSON.parse(message.toString()) as AvaialbilityTopicDto
+        ).availability;
+        if (!tempAvailability) {
+          const tempOfflineDatas: StatusTopicDto = {
+            sensors: {
+              temp: 0,
+              hum: 0,
+              motion: false,
+            },
+            devices: [],
+          };
+          console.log("Availability false, set all devices to offline");
+          setStatusData(tempOfflineDatas);
+        }
+      } else {
+        try {
+          const parsedData = JSON.parse(message.toString());
+          if (topic === MQTT_CONFIG.topics.status) {
+            setStatusData(parsedData);
+          }
           // } else if (topic === MQTT_CONFIG.topics.relays) {
           //   setRelayData(parsedData);
+        } catch (error) {
+          console.error("JSON Parse error", error);
         }
-      } catch (error) {
-        console.error("JSON Parse error", error);
       }
     });
 

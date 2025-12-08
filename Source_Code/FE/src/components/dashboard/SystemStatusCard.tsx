@@ -1,14 +1,30 @@
 import { Status } from "../../interfaces/enum";
 import { SystemStatusCardProps } from "../../interfaces/ui-props.interface";
 import { CheckCircle, XCircle, AlertCircle, Activity } from "lucide-react";
+import { useMqttData } from "../../services/useMqttData";
+import { Device } from "../../interfaces/entities.interface";
 
 function SystemStatusCard({ devices }: SystemStatusCardProps) {
-  const onlineDevices = devices.filter(
-    (device) => device.status === Status.ACTIVE
-  ).length;
+  const { statusData } = useMqttData();
+  const onlineDevices = devices.filter((device) => {
+    if (!statusData) return null;
+    const tempLiveDevice = statusData.devices.find((d) => d.id === device.id);
+    return tempLiveDevice && tempLiveDevice.status === Status.ACTIVE;
+  }).length;
 
   const offlineDevices = devices.length - onlineDevices;
   const totalDevices = devices.length;
+
+  // const getLiveDevice = (device: Device) => {
+  //   if (!statusData) return null;
+  //   let tempDevice = device;
+  //   const tempLiveDevice = statusData.devices.find((d) => d.id === device.id);
+  //   if (!tempLiveDevice) return null;
+  //   tempDevice.autoMode = tempLiveDevice.autoMode ?? false;
+  //   tempDevice.state = tempLiveDevice.state ?? false;
+  //   tempDevice.status = tempLiveDevice.status ? Status.ACTIVE : Status.INACTIVE;
+  //   return tempDevice;
+  // };
 
   const getStatusColor = (status: "good" | "warning" | "error") => {
     switch (status) {

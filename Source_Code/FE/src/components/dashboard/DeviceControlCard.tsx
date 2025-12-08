@@ -18,6 +18,7 @@ function DeviceControlCard({
   const [loadingDevices, setLoadingDevices] = useState<Record<number, boolean>>(
     {}
   );
+  const { statusData, status } = useMqttData();
 
   //const { relayData, sendCommand } = useMqttData();
 
@@ -94,6 +95,17 @@ function DeviceControlCard({
     }
   };
 
+  const getLiveDevice = (device: Device) => {
+    if (!statusData) return null;
+    let tempDevice = device;
+    const tempLiveDevice = statusData.devices.find((d) => d.id === device.id);
+    if (!tempLiveDevice) return null;
+    tempDevice.autoMode = tempLiveDevice.autoMode ?? false;
+    tempDevice.state = tempLiveDevice.state ?? false;
+    tempDevice.status = tempLiveDevice.status ? Status.ACTIVE : Status.INACTIVE;
+    return tempDevice;
+  };
+
   const toggleAutoMode = async (deviceId: number) => {
     // không cho toggle nếu device không đủ điều kiện
     const dev = devices.find((d) => d.id === deviceId);
@@ -149,7 +161,7 @@ function DeviceControlCard({
               <div>
                 <div className="flex items-center gap-2 font-medium">
                   <h3>{device.name}</h3>
-                  {device.status === Status.ACTIVE ? (
+                  {getLiveDevice(device)?.status === Status.ACTIVE ? (
                     <LucideWifi className="text-green-500" />
                   ) : (
                     <LucideWifiOff className="text-red-500" />

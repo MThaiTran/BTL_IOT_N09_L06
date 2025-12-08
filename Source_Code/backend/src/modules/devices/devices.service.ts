@@ -27,7 +27,11 @@ export class DevicesService extends BaseService<Device> {
         id,
         updateEntityDto as QueryDeepPartialEntity<Device>,
       );
-      this.mqttService.publish(MQTT_CONFIG.PUB_TOPICS.DEVICES, updateEntityDto);
+      this.mqttService.publish(
+        MQTT_CONFIG.PUB_TOPICS.DEVICES,
+        id,
+        updateEntityDto,
+      );
       return this.findOne(id);
     } catch (error) {
       console.error('BaseService.update error', error);
