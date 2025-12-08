@@ -62,6 +62,13 @@ export interface SystemLog extends BaseEntity {
   user?: User;
   device?: Device;
 }
+// export enum EDeviceLog {
+//   INFO = "INFO",
+//   WARNING = "WARNING",
+//   ERROR = "ERROR",
+//   UPDATE = "UPDATE",
+//   USER_ACTION = "USER_ACTION",
+// }
 
 export interface Role extends BaseEntity {
   name: string;

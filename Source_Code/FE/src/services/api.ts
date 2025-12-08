@@ -81,7 +81,7 @@ export const devicesAPI = {
   create: (data: CreateDeviceDto): Promise<{ data: Device }> =>
     api.post(import.meta.env.VITE_DEVICE_API_URL, data),
 
-  update: (id: number, data: UpdateDeviceDto): Promise<{ data: Device }> =>
+  upload: (id: number, data: UpdateDeviceDto): Promise<{ data: Device }> =>
     api.patch(`${import.meta.env.VITE_DEVICE_API_URL}/${id}`, data),
 
   delete: (id: number): Promise<void> =>

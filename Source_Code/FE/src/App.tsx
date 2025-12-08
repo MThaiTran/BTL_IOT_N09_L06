@@ -98,7 +98,7 @@ function App() {
           <Route
             path="logs"
             element={
-              <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER]}>
+              <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER, UserRole.GUEST]}>
                 <LogsPage />
               </RoleGuard>
             }
@@ -114,7 +114,7 @@ function App() {
           <Route
             path="voice-control"
             element={
-              <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER]}>
+              <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.HOUSE_OWNER, UserRole.GUEST, UserRole.TECHNICIAN]}>
                 <VoiceControlPage />
               </RoleGuard>
             }
