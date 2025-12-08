@@ -5,7 +5,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 
 
-  // 1. Convert payload to a readable String
+  // 0. Convert payload to a readable String
   String messageTemp;
   for (int i = 0; i < length; i++)
     messageTemp += (char)payload[i];
@@ -14,6 +14,39 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print(topic);
   Serial.println("]: " + messageTemp);
 
+
+
+  // 1. Check if the message comes from the OTA Topic
+  if (String(topic) == MQTT_TOPIC_OTA) {
+
+    StaticJsonDocument<512> doc;
+    DeserializationError error = deserializeJson(doc, messageTemp);
+
+    if (error) {
+      Serial.println("OTA JSON Error");
+      return;
+    }
+
+    // 2. Extract Data
+    if (doc.containsKey("version") && doc.containsKey("url")) {
+      int newVersion = doc["version"];
+      const char* downloadUrl = doc["url"];
+
+      Serial.print("Current Version: ");
+      Serial.println(CODE_VERSION);
+      Serial.print("New Version:     ");
+      Serial.println(newVersion);
+
+      // 3. Compare Version
+      if (newVersion > CODE_VERSION) {
+        Serial.println("New version found! Starting update...");
+        performOTA(String(downloadUrl));
+      } else {
+        Serial.println("Update ignored: Version is not newer.");
+      }
+    }
+    return;  // Exit callback, do not process as a relay command
+  }
 
 
   // 2. Parse JSON using ArduinoJson
@@ -90,7 +123,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     // PRINT STATUS
     Serial.println("--------------------------------");
     Serial.printf("Device %d Auto-Rules Configured:\n", targetDevice->id);
-    
+
     bool hasTrigger = false;
 
     if (!isnan(targetDevice->tempHigher)) {
@@ -130,6 +163,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (stateChanged) {
     Serial.println("Manual change detected...");
-    publishLog();
+    publishSystemData(MQTT_TOPIC_LOGS);
   }
 }
+
+
+

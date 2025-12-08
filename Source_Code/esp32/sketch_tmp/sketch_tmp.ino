@@ -3,17 +3,23 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <HTTPUpdate.h>
 #include "DHT.h"
 #include "login_infos.h"
 #include "control_infos.h"
 
 
 
-#define MQTT_TOPIC_STATUS "esp32/status"           // Done
-#define MQTT_TOPIC_LOGS "esp32/logs"               // Chek req
-#define MQTT_TOPIC_WARNS "esp32/warnings"          //
-#define MQTT_TOPIC_DEVICES "esp32/devices"         // Check req
+const int CODE_VERSION = 1;
+
+
+
+#define MQTT_TOPIC_STATUS "esp32/status"              // Done
+#define MQTT_TOPIC_LOGS "esp32/logs"                  // Chek req
+#define MQTT_TOPIC_WARNS "esp32/warnings"             //
+#define MQTT_TOPIC_DEVICES "esp32/devices"            // Check req
 #define MQTT_TOPIC_AVAILABILITY "esp32/availability"  // Check req
+#define MQTT_TOPIC_OTA "esp32/ota"
 
 // Running the code on your own require these parameters:
 // #define WIFI_SSID "WIFI_NAME" <- Replaced by WifiManager soon
@@ -32,12 +38,12 @@ const int NUM_DEVICES = 6;
 
 Device myDevices[NUM_DEVICES] = {
   // ID, Pin, State, AutoMode, T_High, H_High, Mot_On, T_Low,  H_Low,  Mot_Off
-  { 8, 23, false, false, NAN, NAN, false, NAN, NAN, false },
-  { 9, 21, false, false, NAN, NAN, false, NAN, NAN, false },
-  { 10, 19, false, false, NAN, NAN, false, NAN, NAN, false },
-  { 11, 18, false, false, NAN, NAN, false, NAN, NAN, false },
-  { 12, 17, false, false, NAN, NAN, false, NAN, NAN, false },
-  { 13, 16, false, false, NAN, NAN, false, NAN, NAN, false }
+  { 8, 16, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 9, 17, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 10, 18, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 11, 19, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 12, 21, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 13, 23, false, false, NAN, NAN, false, NAN, NAN, false }
 };
 
 SensorData currentSensors = { NAN, NAN, false, false };
@@ -49,11 +55,13 @@ DHT dht(DHT_PIN, DHT_TYPE);
 
 const long interval = 2000;
 const long logInterval = 20000;
+const long wifiCheckInterval = 20000; 
 const char* MQTT_WILL = "{\"availability\": false}";
 const char* MQTT_WILL_CONNECTED = "{\"availability\": true}";
 
 unsigned long lastLogTime = 0;
 unsigned long lastStatusTime = 0;
+unsigned long lastWifiCheck = 0; 
 
 // HiveMQ Cloud Let's Encrypt CA certificate
 static const char* root_ca PROGMEM = R"EOF(
@@ -91,26 +99,6 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 )EOF";
 
 
-// currently unused - test first_run.ino needed to test UX
-// void setup_wifi() {
-//   delay(100);
-//   Serial.println();
-//   Serial.print("Connecting to ");
-//   Serial.println(WIFI_SSID);
-
-//   WiFi.mode(WIFI_STA);
-//   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-//   while (WiFi.status() != WL_CONNECTED) {
-//     delay(1000);
-//     Serial.println("Wifi connect failed. Reconnecting...");
-//   }
-
-//   Serial.println("\nWiFi connected");
-//   Serial.println(WiFi.localIP());
-// }
-
-
 
 void reconnect() {
   while (!client.connected()) {
@@ -121,6 +109,7 @@ void reconnect() {
       Serial.println("connected");
       client.publish(MQTT_TOPIC_AVAILABILITY, MQTT_WILL_CONNECTED, true);
       client.subscribe(MQTT_TOPIC_DEVICES);
+      client.subscribe(MQTT_TOPIC_OTA);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -132,32 +121,47 @@ void reconnect() {
 
 
 
+void start_wifi_manager() {
+  WiFiManager wm;
+  wm.setConfigPortalTimeout(180);
+
+  Serial.println("Starting WiFi Manager...");
+  bool res = wm.autoConnect("ESP32_Config_AP");
+
+  if (!res) {
+    Serial.println("Failed to connect to WiFi (timeout).");
+    ESP.restart();
+  } else {
+    Serial.println("WiFi Connected successfully!");
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
+  }
+}
+
+
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
 
   // wm.resetSettings();
 
+  pinMode(RESET_PIN, INPUT_PULLUP);
 
-    pinMode(RESET_PIN, INPUT_PULLUP);
+  if (digitalRead(RESET_PIN) == LOW) {
+    Serial.println("Reset Button Held...");
+    Serial.println("Erasing WiFi Settings in 3 seconds...");
+    delay(5000);
 
     if (digitalRead(RESET_PIN) == LOW) {
-      Serial.println("Reset Button Held...");
-      Serial.println("Erasing WiFi Settings in 3 seconds...");
-      delay(3000);
-
-      if (digitalRead(RESET_PIN) == LOW) {
-        WiFiManager wm;
-        wm.resetSettings();
-        Serial.println("Settings Erased! Restarting...");
-        ESP.restart();
-      }
+      WiFiManager wm;
+      wm.resetSettings();
+      Serial.println("Settings Erased! Restarting...");
+      ESP.restart();
     }
+  }
 
-
-
-    // Init Sensors
-    dht.begin();
+  dht.begin();
   pinMode(PIR_PIN, INPUT);
 
   for (int i = 0; i < NUM_DEVICES; i++) {
@@ -167,14 +171,17 @@ void setup() {
 
   Serial.println("System initializing...");
 
-  // Init Network
-  // setup_wifi();
   start_wifi_manager();
   espClient.setCACert(root_ca);
   client.setServer(MQTT_SERVER, MQTT_PORT);
   client.setCallback(callback);
 
   client.setBufferSize(2048);
+
+  Serial.print("-----CODE VERSION: ");
+  Serial.print(CODE_VERSION);
+  Serial.print("-----");
+  Serial.println();
 }
 
 
@@ -194,79 +201,6 @@ void publishWarning(int devId, const char* threshName, float threshVal, float cu
   Serial.println(output);
 
   client.publish(MQTT_TOPIC_WARNS, output.c_str());
-}
-
-
-
-void publishLog() {
-  float t = dht.readTemperature();
-  float h = dht.readHumidity();
-  bool m = (digitalRead(PIR_PIN) == HIGH);
-
-  if (isnan(t) || isnan(h)) return;
-
-  DynamicJsonDocument log(1024);
-
-  // Object Sensors
-  JsonObject sensors = log.createNestedObject("sensors");
-  sensors["temp"] = t;
-  sensors["hum"] = h;
-  sensors["motion"] = m;
-
-  // Array Devices
-  JsonArray devices = log.createNestedArray("devices");
-  for (int i = 0; i < NUM_DEVICES; i++) {
-    JsonObject devObj = devices.createNestedObject();
-    devObj["id"] = myDevices[i].id;
-    devObj["state"] = myDevices[i].state;
-    devObj["autoMode"] = myDevices[i].autoMode;
-  }
-
-  String output;
-  serializeJson(log, output);
-
-  Serial.println(">> Sending LOG data...");
-  client.publish(MQTT_TOPIC_LOGS, output.c_str());
-}
-
-
-
-void publishStatus() {
-  // --- READ SENSORS ---
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  int motion = digitalRead(PIR_PIN);
-
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor!");
-    return;
-  }
-
-  // --- PREPARE JSON ---
-  DynamicJsonDocument doc(2048);
-
-  JsonObject sensors = doc.createNestedObject("sensors");
-  sensors["temp"] = t;
-  sensors["hum"] = h;
-  sensors["motion"] = (motion == HIGH);
-
-  JsonArray devicesArray = doc.createNestedArray("devices");
-  for (int i = 0; i < NUM_DEVICES; i++) {
-    JsonObject devObj = devicesArray.createNestedObject();
-    myDevices[i].state = digitalRead(myDevices[i].pin);
-    devObj["id"] = myDevices[i].id;
-    devObj["state"] = myDevices[i].state;
-    devObj["autoMode"] = myDevices[i].autoMode;
-  }
-
-
-  String output;
-  serializeJson(doc, output);
-
-  // --- PUBLISH TO HIVEMQ ---
-  Serial.print("Publishing message: ");
-  Serial.println(output);
-  client.publish(MQTT_TOPIC_STATUS, output.c_str());
 }
 
 
@@ -293,13 +227,22 @@ void publishSystemData(const char* topic) {
     d["status"] = "active";
   }
 
+    JsonObject pir = devices.createNestedObject();
+    pir["id"] = 15;
+    pir["status"] = "active";
+
+    JsonObject dht = devices.createNestedObject();
+    dht["id"] = 14;
+    dht["status"] = "active";
+
   String output;
   serializeJson(doc, output);
 
   Serial.print(">> Publishing to [");
   Serial.print(topic);
-  Serial.print("]: ");
-  Serial.println(output.substring(0, 50) + "...");
+  Serial.print("]...");
+  Serial.println();
+  // Serial.println(output.substring(0, 50) + "...");
 
   client.publish(topic, output.c_str());
 }
