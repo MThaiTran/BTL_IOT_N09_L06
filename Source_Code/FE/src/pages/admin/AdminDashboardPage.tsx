@@ -3,13 +3,14 @@ import { usersAPI, devicesAPI, systemLogsAPI } from "../../services/api";
 import { Users, Cpu, Activity, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-// import axios from "axios"; // Bạn không dùng axios trực tiếp trong file này nên có thể bỏ
-//import { LiveMonitor } from "../../components/dashboard/LiveMonitor"; // <--- 1. Import LiveMonitor
+import ThresholdAlert from "../../components/ThresholdAlert";
+import { SystemLog } from "../../interfaces/entities.interface";
 
 function AdminDashboardPage() {
   const [users, setUsers] = useState<any>(null);
   const [devices, setDevices] = useState<any>(null);
   const [logs, setLogs] = useState<any>(null);
+  const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,17 +21,18 @@ function AdminDashboardPage() {
       setLoading(true);
       setError(null);
       try {
-        const [uRes, dRes, lRes] = await Promise.all([
+        const [uRes, dRes, lRes, sRes] = await Promise.all([
           usersAPI.getAll(),
           devicesAPI.getAll(),
           systemLogsAPI.getAll(),
+          systemLogsAPI.getAll(), // Lấy logs chi tiết
         ]);
         if (!cancelled) {
           setUsers(uRes.data);
           setDevices(dRes.data);
           setLogs(lRes.data);
+          setSystemLogs(sRes.data || []);
         }
-        console.log(uRes.data, dRes, lRes);
       } catch (err: any) {
         if (!cancelled) setError(err.message ?? "Fetch failed");
       } finally {
@@ -40,8 +42,21 @@ function AdminDashboardPage() {
 
     fetchAll();
 
+    // Refresh logs mỗi 10 giây
+    const logsInterval = setInterval(async () => {
+      try {
+        const sRes = await systemLogsAPI.getAll();
+        if (!cancelled) {
+          setSystemLogs(sRes.data || []);
+        }
+      } catch (err) {
+        console.error("Error fetching logs:", err);
+      }
+    }, 10000);
+
     return () => {
-      cancelled = true; // tránh setState trên component đã unmount
+      cancelled = true;
+      clearInterval(logsInterval);
     };
   }, []);
 
@@ -76,7 +91,7 @@ function AdminDashboardPage() {
       link: "/logs",
     },
     {
-      title: "Cảnh báo",
+      title: "Logs",
       value:
         (Array.isArray(logs) ? logs : []).filter(
           (l: any) => l.log === "ERROR" || l.log === "WARNING"
@@ -92,6 +107,9 @@ function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Threshold Alert Notifications */}
+      <ThresholdAlert logs={systemLogs} />
+
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -99,17 +117,8 @@ function AdminDashboardPage() {
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
           Quản lý và kiểm soát toàn bộ hệ thống
-          {/* <div className="mb-6">
-        <LiveMonitor />
-      </div> */}
         </p>
       </div>
-
-      {/* --- 2. THÊM LIVE MONITOR VÀO ĐÂY --- */}
-      {/* <div className="mb-6">
-        <LiveMonitor />
-      </div> */}
-      {/* ------------------------------------ */}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

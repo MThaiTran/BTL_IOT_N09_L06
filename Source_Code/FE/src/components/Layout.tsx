@@ -77,14 +77,16 @@ function Layout() {
           ...baseNavItems
         );
         break;
-      // case UserRole.TECHNICIAN:
-      //     nav.push(firmwareNavItem, voiceControlNavItem, ...baseNavItems);
-      //     break;
       case UserRole.HOUSE_OWNER:
         nav.push(permissionsNavItem, voiceControlNavItem, ...baseNavItems);
         break;
       case UserRole.GUEST:
-        nav.push(voiceControlNavItem, ...baseNavItems);
+        // Guest: chỉ dashboard, giọng nói, nhật ký (không có thiết bị)
+        nav.push(
+          voiceControlNavItem,
+          { path: "/dashboard", label: "Dashboard", icon: Home },
+          { path: "/logs", label: "Nhật Ký", icon: FileText }
+        );
         break;
       default:
         nav.push(...baseNavItems);

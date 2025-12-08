@@ -82,7 +82,7 @@ function FirmwareUpdatePage() {
       }, 400);
 
       // Call API
-      const respone = await devicesAPI.upload(formData);
+      const respone = await filehandler.upload(formData);
       console.log("File uploaded: ", file.name,"Form data: ", formData);
       console.log("Response from upload API: ", respone.data);
       //await filehandler.upload(formData);
