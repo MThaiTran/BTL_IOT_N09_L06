@@ -32,40 +32,40 @@ void checkAutoRules() {
       } else if (myDevices[i].motionOn && currentSensors.motion) {
         newState = true;
         triggerReason = "motionOn";
-        triggerLimit = true;
-        triggerActualValue = true;
+        triggerLimit = myDevices[i].motionOn;
+        triggerActualValue = currentSensors.motion;
       } else if (!isnan(myDevices[i].tempLower) && currentSensors.temp <= myDevices[i].tempLower) {
-        newState = false;
+        newState = true;
         triggerReason = "tempLower";
         triggerLimit = myDevices[i].tempLower;
         triggerActualValue = currentSensors.temp;
       } else if (!isnan(myDevices[i].humLower) && currentSensors.hum <= myDevices[i].humLower) {
-        newState = false;
+        newState = true;
         triggerReason = "humLower";
         triggerLimit = myDevices[i].humLower;
         triggerActualValue = currentSensors.hum;
       } else if (myDevices[i].motionOff && !currentSensors.motion) {
-        newState = false;
+        newState = true;
         triggerReason = "motionOff";
-        triggerLimit = false;
-        triggerActualValue = false;
+        triggerLimit = myDevices[i].motionOff;
+        triggerActualValue = currentSensors.motion;
       }
     } else {
       if (!isnan(myDevices[i].tempHigher) && currentSensors.temp < myDevices[i].tempHigher) {
-        newState = true;
+        newState = false;
         triggerReason = "tempHigher";
         triggerLimit = myDevices[i].tempHigher;
         triggerActualValue = currentSensors.temp;
       } else if (!isnan(myDevices[i].humHigher) && currentSensors.hum < myDevices[i].humHigher) {
-        newState = true;
+        newState = false;
         triggerReason = "humHigher";
         triggerLimit = myDevices[i].humHigher;
         triggerActualValue = currentSensors.hum;
       } else if (myDevices[i].motionOn && !currentSensors.motion) {
-        newState = true;
+        newState = false;
         triggerReason = "motionOn";
-        triggerLimit = true;
-        triggerActualValue = true;
+        triggerLimit = myDevices[i].motionOn;
+        triggerActualValue = currentSensors.motion;
       } else if (!isnan(myDevices[i].tempLower) && currentSensors.temp > myDevices[i].tempLower) {
         newState = false;
         triggerReason = "tempLower";
@@ -79,8 +79,8 @@ void checkAutoRules() {
       } else if (!myDevices[i].motionOff && currentSensors.motion) {
         newState = false;
         triggerReason = "motionOff";
-        triggerLimit = false;
-        triggerActualValue = false;
+        triggerLimit = myDevices[i].motionOff;
+        triggerActualValue = currentSensors.motion;
       }
     }
 
