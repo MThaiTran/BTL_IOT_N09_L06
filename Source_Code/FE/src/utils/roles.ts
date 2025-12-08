@@ -30,7 +30,10 @@ export const getCurrentUserRole = (): UserRole | null => {
   const { user } = getAuth();
   return user?.roleId ? (user.roleId as UserRole) : null;
 };
-
+export const getCurrentUserId = (): number | null => {
+  const { user } = getAuth();
+  return user?.id ? user.id : null;
+}
 /**
  * Check if current user is Admin
  */
@@ -85,11 +88,11 @@ export const getRoleDisplayName = (roleId: number): string => {
     case UserRole.ADMIN:
       return "Quản trị viên";
     case UserRole.TECHNICIAN:
-      return "Kỹ thuật viên";
+      return "Chủ nhà";
     case UserRole.HOUSE_OWNER:
       return "Chủ nhà";
     case UserRole.GUEST:
-      return "Thành viên gia đình";
+      return "Thành viên";
     default:
       return "Người dùng";
   }
@@ -108,7 +111,7 @@ export const canAccessAdmin = (): boolean => {
  */
 export const canManageDevices = (): boolean => {
   const role = getCurrentUserRole();
-  return role === UserRole.ADMIN || role === UserRole.HOUSE_OWNER;
+  return role === UserRole.ADMIN || role === UserRole.HOUSE_OWNER ;
 };
 
 /**

@@ -2,6 +2,7 @@ export enum UserRole {
   ADMIN = 1,
   HOUSE_OWNER = 2,
   GUEST = 3,
+  TECHNICIAN = 2,
 }
 
 export enum Status {

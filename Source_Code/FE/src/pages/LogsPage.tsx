@@ -1,6 +1,10 @@
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { systemLogsAPI } from "../services/api";
+import { systemLogsAPI, userDevicesAPI } from "../services/api";
 import { SystemLog } from "../interfaces/entities.interface";
+import { EDeviceLog } from "../interfaces/enum";
+import { getCurrentUserId, getCurrentUserRole } from "../utils/roles";
+import { UserRole } from "../interfaces/enum";
 import {
   AlertCircle,
   Info,
@@ -9,18 +13,70 @@ import {
   UserCog,
 } from "lucide-react";
 import { format } from "date-fns";
-import { EDeviceLog } from "../interfaces/enum";
 
 function LogsPage() {
+  const userId = getCurrentUserId();
+  const userRole = getCurrentUserRole();
+  const [permittedDeviceIds, setPermittedDeviceIds] = useState<number[]>([]);
+  const [filteredLogs, setFilteredLogs] = useState<SystemLog[]>([]);
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
+
+  // Lấy danh sách thiết bị được cấp quyền (chỉ cho Guest & House Owner)
+  const { data: userDevices, isLoading: isLoadingUserDevices } = useQuery({
+    queryKey: ["userDevices", userId],
+    queryFn: () => userDevicesAPI.getOne(userId!).then((res) => res.data),
+    enabled:
+      !!userId &&
+      (userRole === UserRole.GUEST || userRole === UserRole.HOUSE_OWNER),
+  });
+
+  // Set permitted device IDs khi userDevices load xong
+  useEffect(() => {
+    if (userRole === UserRole.ADMIN) {
+      // Admin có quyền xem tất cả
+      setPermittedDeviceIds([]);
+      setIsLoadingPermissions(false);
+    } else if (!isLoadingUserDevices) {
+      // Guest/House Owner: chỉ xem thiết bị được cấp
+      if (userDevices && userDevices.length > 0) {
+        const deviceIds = userDevices.map((ud: any) => ud.deviceId);
+        setPermittedDeviceIds(deviceIds);
+      } else {
+        setPermittedDeviceIds([]);
+      }
+      setIsLoadingPermissions(false);
+    }
+  }, [userDevices, isLoadingUserDevices, userRole]);
+
+  // Lấy tất cả logs từ systemLogsAPI
   const {
     data: logs,
-    isLoading,
+    isLoading: isLoadingLogs,
     refetch,
   } = useQuery({
     queryKey: ["system-logs"],
     queryFn: () => systemLogsAPI.getAll().then((res) => res.data),
     refetchInterval: 10000, // Refresh every 10 seconds
   });
+
+  // Lọc logs dựa trên role
+  useEffect(() => {
+    if (!isLoadingPermissions && logs) {
+      if (userRole === UserRole.ADMIN) {
+        // Admin xem tất cả logs
+        setFilteredLogs(logs);
+      } else if (permittedDeviceIds.length > 0) {
+        // Guest/House Owner: chỉ xem logs của thiết bị được cấp
+        const filtered = logs.filter((log) =>
+          permittedDeviceIds.includes(log.deviceId)
+        );
+        setFilteredLogs(filtered);
+      } else if (permittedDeviceIds.length === 0) {
+        // Không có quyền → không hiển thị log
+        setFilteredLogs([]);
+      }
+    }
+  }, [logs, permittedDeviceIds, isLoadingPermissions, userRole]);
 
   const getLogIcon = (logType: EDeviceLog) => {
     switch (logType) {
@@ -67,6 +123,8 @@ function LogsPage() {
     }
   };
 
+  const isLoading = isLoadingPermissions || isLoadingLogs;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -84,7 +142,9 @@ function LogsPage() {
             Nhật ký Hệ thống
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Theo dõi các sự kiện và cảnh báo từ hệ thống
+            {userRole === UserRole.ADMIN
+              ? "Theo dõi các sự kiện và cảnh báo từ hệ thống"
+              : "Theo dõi các sự kiện từ các thiết bị được cấp quyền"}
           </p>
         </div>
         <button
@@ -96,10 +156,20 @@ function LogsPage() {
         </button>
       </div>
 
+      {/* Thông báo cho Guest/Owner không có quyền */}
+      {(userRole === UserRole.GUEST || userRole === UserRole.HOUSE_OWNER) &&
+        permittedDeviceIds.length === 0 && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <p className="text-blue-700 dark:text-blue-300">
+              Bạn chưa được cấp quyền sử dụng thiết bị nào.
+            </p>
+          </div>
+        )}
+
       {/* Logs List */}
-      {logs && logs.length > 0 ? (
+      {filteredLogs && filteredLogs.length > 0 ? (
         <div className="space-y-4">
-          {logs
+          {filteredLogs
             .sort(
               (a, b) =>
                 new Date(b.createdAt).getTime() -
