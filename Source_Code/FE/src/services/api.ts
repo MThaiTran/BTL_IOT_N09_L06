@@ -13,6 +13,7 @@ import {
   CreateDeviceDto,
   CreateUserDevicesDto,
   CreateUserDto,
+  FileDto,
   LoginDto,
   SignupDto,
   UpdateDeviceDto,
@@ -144,10 +145,32 @@ export const rolesAPI = {
     api.get(`${import.meta.env.VITE_ROLE_API_URL}/${id}`),
 };
 export const filehandler = {
-  upload: (data: FormData): Promise<{ data: Device }> =>
+  upload: (data: FormData) =>
     api.post(`${import.meta.env.VITE_UPLOAD_API_URL}`, data, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+
+  download: (fileType: string, fileName: string) =>
+    api.get(
+      `${import.meta.env.VITE_DOWNLOAD_FILE_API_URL}/${fileType}/${fileName}`
+    ),
+
+  getAll: (): Promise<{ data: FileDto[] }> =>
+    api.get(`${import.meta.env.VITE_GET_ALL_FILES_API_URL}`),
+};
+
+export const tmpFileOrgApi = {
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return axios.post(
+      `${import.meta.env.VITE_TMP_FILE_ORG_API_URL}`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+  },
 };
 
 export default api;

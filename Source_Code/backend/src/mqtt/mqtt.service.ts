@@ -103,8 +103,8 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       // Xử lý log message
       const tempLogDto = {
         log: EDeviceLog.INFO,
-        logDescription: 'TEST LOG FROM MQTT',
-        logData: JSON.stringify({ test: 'data' }),
+        logDescription: 'Regularly log from devices',
+        logData: JSON.parse(payload.toString()),
         userId: 1,
         deviceId: null, // message là 1 mảng >> nên lấy hay ko ?
       };
@@ -113,8 +113,8 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       // Xử lý warning message
       const tempWarningDto = {
         log: EDeviceLog.WARNING,
-        logDescription: 'TEST LOG FROM MQTT',
-        logData: JSON.stringify({ test: 'data' }),
+        logDescription: 'Warning from device',
+        logData: JSON.parse(payload.toString()),
         userId: 1,
         deviceId: null, // Có thể lấy từ message nếu có
       };
