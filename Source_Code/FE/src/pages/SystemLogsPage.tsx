@@ -4,7 +4,7 @@ import { systemLogsAPI, userDevicesAPI } from "../services/api";
 import { SystemLog } from "../interfaces/entities.interface";
 import { EDeviceLog } from "../interfaces/enum";
 import { getCurrentUserId } from "../utils/roles";
-import { AlertCircle, TrendingDown, TrendingUp } from "lucide-react";
+import {TrendingDown, TrendingUp } from "lucide-react";
 
 function SystemLogsPage() {
   const userId = getCurrentUserId();
@@ -46,7 +46,7 @@ function SystemLogsPage() {
       const filtered = systemLogs.filter(
         (log) =>
           // Chỉ lấy log loại WARNING (cảnh báo ngưỡng)
-          (log.log === EDeviceLog.WARNING ||
+          (log.log === EDeviceLog.WARNING || log.log === EDeviceLog.ERROR ||
             log.logDescription?.toLowerCase().includes("ngưỡng")) &&
           // Chỉ lấy log của thiết bị được cấp quyền
           permittedDeviceIds.includes(log.deviceId)
