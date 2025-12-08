@@ -113,5 +113,53 @@ Các tên ngưỡng mà ESP có thể đọc được:
 - Nếu thiết bị offline trong trường hợp bất ngờ (mất mạng, mất điện, etc..), MQTT broker sẽ dựa vào di chúc đính kèm ở yêu cầu kết nối ban đầu, để gửi thông báo đến các client là đã mất kết nối
 - Respond của topic này cũng sẽ là JSON (biết là không cần phải là JSON, chỉ là để đồng bộ mấy cái kia thôi)
 ```
+{ availability: false } // false = đã ngắt kết nối
+```
+
+
+# Test cases
+- Bật một thiết bị
+```
+{
+  "id": 10,
+  "state": true
+}
+```
+
+- Tắt một thiết bị
+```
+{
+  "id": 10,
+  "state": true
+}
+```
+
+- Đặt điều kiện: nóng hơn bao nhiêu độ
+```
+{
+  "id": 13,
+  "autoMode": true,
+  "tempHigher": 29
+}
+```
+
+- Đặt điều kiện: có chuyển động
+```
+{
+  "id": 12,
+  "autoMode": true,
+  "tempHigher": 28
+}
+```
+
+- Đặt điều kiện: độ ẩm cao hơn bao nhiêu % hoặc nhiệt độ cao hơn bao nhiêu
+```
+{
+  "id": 11,
+  "autoMode": true,
+  "tempHigher": 35,
+  "hum"
+}
+```
 { "availability": false } // false = đã ngắt kết nối
 ```
