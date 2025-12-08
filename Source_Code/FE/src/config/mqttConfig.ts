@@ -10,5 +10,6 @@ export const MQTT_CONFIG = {
     status: import.meta.env.VITE_MQTT_STATUS_TOPIC,
     logs: import.meta.env.VITE_MQTT_LOGS_TOPIC,
     warnings: import.meta.env.VITE_MQTT_WARNINGS_TOPIC,
+    availability: import.meta.env.VITE_MQTT_AVAILABILITY_TOPIC,
   },
 };
