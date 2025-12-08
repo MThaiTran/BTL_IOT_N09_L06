@@ -1,4 +1,8 @@
-void checkAutoRules(float currentTemp, float currentHum, bool currentMotion) {
+void checkAutoRules() {
+  float currentHum = dht.readHumidity();
+  float currentTemp = dht.readTemperature();
+  int currentMotion = digitalRead(PIR_PIN);
+
   bool anyDeviceChanged = false;
 
   for (int i = 0; i < NUM_DEVICES; i++) {

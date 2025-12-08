@@ -1,5 +1,5 @@
 #include <WiFi.h>
-#include <WifiManager.h>
+#include <WiFiManager.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
@@ -295,7 +295,7 @@ void loop() {
 
   if (now - lastMsgTime > interval) {
     lastMsgTime = now;
-    checkAutoRules(t, h, motion);
-    publishStatus()
+    checkAutoRules();
+    publishStatus();
   }
 }

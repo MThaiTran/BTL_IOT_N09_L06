@@ -50,7 +50,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   // CASE 1: MANUAL
   bool isManualRequest = (doc.containsKey("autoMode") && doc["autoMode"] == false) || doc.containsKey("state");
-  if (isManualRequest)) {
+  if (isManualRequest) {
       targetDevice->autoMode = false;
 
       if (doc.containsKey("state")) {
