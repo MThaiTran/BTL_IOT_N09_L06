@@ -31,12 +31,12 @@ const int NUM_DEVICES = 6;
 
 Device myDevices[NUM_DEVICES] = {
   // ID, Pin, State, AutoMode, T_High, H_High, Mot_On, T_Low,  H_Low,  Mot_Off
-  { 8, 23, 0, 0, NAN, NAN, 0, NAN, NAN, 0 },
-  { 9, 22, 0, 0, NAN, NAN, 0, NAN, NAN, 0 },
-  { 10, 19, 0, 0, NAN, NAN, 0, NAN, NAN, 0 },
-  { 11, 18, 0, 0, NAN, NAN, 0, NAN, NAN, 0 },
-  { 12, 17, 0, 0, NAN, NAN, 0, NAN, NAN, 0 },
-  { 13, 16, 0, 0, NAN, NAN, 0, NAN, NAN, 0 }
+  { 8, 23, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 9, 22, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 10, 19, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 11, 18, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 12, 17, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 13, 16, false, false, NAN, NAN, false, NAN, NAN, false }
 };
 
 SensorData currentSensors = { NAN, NAN, false, false };
