@@ -238,9 +238,9 @@ function PermissionsPage() {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Vai trò
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {/* <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Quyền điều khiển
-                </th>
+                </th> */}
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Thiết bị được phép
                 </th>
@@ -278,7 +278,7 @@ function PermissionsPage() {
                         ))}
                       </select>
                     </td>
-                    <td className="px-6 py-4">
+                    {/* <td className="px-6 py-4">
                       <label className="inline-flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -296,7 +296,7 @@ function PermissionsPage() {
                           Cho phép điều khiển giọng nói
                         </span>
                       </label>
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4">
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">

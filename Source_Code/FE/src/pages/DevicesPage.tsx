@@ -17,8 +17,8 @@ function DevicesPage() {
   const [error, setError] = useState<string | null>(null);
 
   // 2. Lấy dữ liệu Relay từ MQTT
-  const { relayData } = useMqttData();
-  console.log("Relay Data in DevicesPage:", relayData);
+  const { statusData } = useMqttData();
+  console.log("Relay Data in DevicesPage:", statusData);
   const { user } = getAuth();
   const canViewAll = canViewAllDevices();
   const canManipulateDevices = canManageDevices();
@@ -136,7 +136,7 @@ function DevicesPage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               canManipulate={canManipulateDevices}
-              relayData={relayData} // 3. Truyền dữ liệu Relay xuống card
+              // statusData={statusData} // 3. Truyền dữ liệu Relay xuống card
             />
           ))}
         </div>
@@ -177,7 +177,7 @@ interface DeviceCardProps {
   onEdit: (device: Device) => void;
   onDelete: (id: number) => void;
   canManipulate: boolean;
-  relayData: { relay1: number; relay2: number }; // Thêm kiểu dữ liệu relay
+  // statusData: { relay1: number; relay2: number }; // Thêm kiểu dữ liệu relay
 }
 
 function DeviceCard({
@@ -186,8 +186,8 @@ function DeviceCard({
   onEdit,
   onDelete,
   canManipulate,
-  relayData,
-}: DeviceCardProps) {
+}: // statusData,
+DeviceCardProps) {
   const isOnline = device.lastestDeviceUpdate
     ? new Date(device.lastestDeviceUpdate).getTime() > Date.now() - 60000
     : false;
@@ -195,11 +195,11 @@ function DeviceCard({
   // 5. Logic xác định trạng thái thật (ON/OFF) dựa trên tên thiết bị
   const getDeviceRealStatus = () => {
     const name = device.name.toLowerCase();
-    // Logic map tên -> relay
-    if (name.includes("đèn") || name.includes("light"))
-      return relayData.relay1 === 1;
-    if (name.includes("quạt") || name.includes("fan"))
-      return relayData.relay2 === 1;
+    // // Logic map tên -> relay
+    // if (name.includes("đèn") || name.includes("light"))
+    //   return relayData.relay1 === 1;
+    // if (name.includes("quạt") || name.includes("fan"))
+    //   return relayData.relay2 === 1;
     return null; // Không phải thiết bị điều khiển (ví dụ cảm biến)
   };
 

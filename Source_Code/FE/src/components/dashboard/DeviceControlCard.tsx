@@ -4,6 +4,8 @@ import { useMqttData } from "../../services/useMqttData";
 import { devicesAPI } from "../../services/api";
 import { DeviceControlCardProps } from "../../interfaces/ui-props.interface";
 import { Device } from "../../interfaces/entities.interface";
+import { LucidePowerOff, LucideWifi, LucideWifiOff } from "lucide-react";
+import { Status } from "../../interfaces/enum";
 
 function DeviceControlCard({
   title,
@@ -13,7 +15,9 @@ function DeviceControlCard({
   // local optimistic status per device and loading flags
   const [autoMode, setAutoMode] = useState<Record<number, boolean>>({});
   const [localStatus, setLocalStatus] = useState<Record<number, number>>({});
-  const [loadingDevices, setLoadingDevices] = useState<Record<number, boolean>>({});
+  const [loadingDevices, setLoadingDevices] = useState<Record<number, boolean>>(
+    {}
+  );
 
   //const { relayData, sendCommand } = useMqttData();
 
@@ -38,27 +42,48 @@ function DeviceControlCard({
     return check.includes("đèn") || check.includes("light");
   };
 
-  // chỉ cho Auto mode khi device là đèn và location = "cầu thang"
+  // helper: xác định thiết bị là quạt
+  const isFanDevice = (device: Device) => {
+    const check = (
+      device.deviceType?.name ||
+      device.name ||
+      device.description ||
+      device.location ||
+      ""
+    ).toLowerCase();
+    return check.includes("quạt") || check.includes("fan");
+  };
+
+  // chỉ cho Auto mode khi device là đèn và location = "cầu thang" hoặc quạt
   const canAutoMode = (device: Device) =>
-    isLightDevice(device) && (device.location ?? "").toLowerCase() === "cầu thang";
+    isFanDevice(device) ||
+    (isLightDevice(device) &&
+      (device.location ?? "").toLowerCase() === "cầu thang");
 
   const toggleDevice = async (device: Device) => {
     // determine current and next status
     const current = localStatus[device.id] ?? (device as any).status ?? 0;
     const next = current === 1 ? 0 : 1;
-    
+
     // optimistic update
     setLocalStatus((prev) => ({ ...prev, [device.id]: next }));
     setLoadingDevices((prev) => ({ ...prev, [device.id]: true }));
 
     try {
       // call backend to update state; backend will handle MQTT publish
-      await devicesAPI.update(device.id, { 
+      await devicesAPI.update(device.id, {
         state: Boolean(next),
-        autoMode: autoMode[device.id] ?? false
+        autoMode: autoMode[device.id] ?? false,
+        thresholdHigh: device.thresholdHigh,
+        thresholdLow: device.thresholdLow,
       });
       toast.success("Yêu cầu gửi đến hệ thống");
-      console.info("Device status updated:", device.id, "state:", Boolean(next));
+      console.info(
+        "Device status updated:",
+        device.id,
+        "state:",
+        Boolean(next)
+      );
     } catch (err: any) {
       // rollback on error
       setLocalStatus((prev) => ({ ...prev, [device.id]: current }));
@@ -83,10 +108,11 @@ function DeviceControlCard({
       // send autoMode status to backend
       await devicesAPI.update(deviceId, {
         autoMode: newAutoMode,
-        state: isDeviceOn(dev)
+        state: isDeviceOn(dev),
+        thresholdHigh: dev.thresholdHigh,
+        thresholdLow: dev.thresholdLow,
       });
-      toast.success(`Chế độ ${newAutoMode ? 'tự động' : 'thủ công'} được bật`);
-      console.info("AutoMode toggled for device:", deviceId, "autoMode:", newAutoMode);
+      toast.success(`Chế độ ${newAutoMode ? "tự động" : "thủ công"} được bật`);
     } catch (err: any) {
       // rollback on error
       setAutoMode((prev) => ({ ...prev, [deviceId]: !newAutoMode }));
@@ -121,15 +147,22 @@ function DeviceControlCard({
           return (
             <div key={device.id} className="flex items-center justify-between">
               <div>
-                <div className="font-medium">{device.name}</div>
-                <div className="text-xs text-gray-500">{label}</div>
+                <div className="flex items-center gap-2 font-medium">
+                  <h3>{device.name}</h3>
+                  {device.status === Status.ACTIVE ? (
+                    <LucideWifi className="text-green-500" />
+                  ) : (
+                    <LucideWifiOff className="text-red-500" />
+                  )}
+                </div>
+                <div className=" text-gray-500">{label}</div>
               </div>
 
               <div className="flex items-center gap-3">
                 {canAutoMode(device) && (
                   <button
                     onClick={() => toggleAutoMode(device.id)}
-                    className="text-xs px-2 py-1 border rounded"
+                    className=" px-7 py-1 border rounded"
                   >
                     {autoMode[device.id] ? "Auto" : "Manual"}
                   </button>
@@ -138,8 +171,10 @@ function DeviceControlCard({
                 <button
                   onClick={() => toggleDevice(device)}
                   disabled={autoMode[device.id] || loadingDevices[device.id]}
-                  className={`px-3 py-1 rounded ${
-                    on ? "bg-green-500 text-white" : "bg-gray-200 dark:bg-gray-700"
+                  className={`px-7 py-2 rounded ${
+                    on
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-200 dark:bg-gray-700"
                   }`}
                 >
                   {loadingDevices[device.id] ? "..." : on ? "BẬT" : "TẮT"}
