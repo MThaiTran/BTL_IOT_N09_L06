@@ -3,7 +3,6 @@ import { usersAPI, devicesAPI, systemLogsAPI } from "../../services/api";
 import { Users, Cpu, Activity, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import ThresholdAlert from "../../components/ThresholdAlert";
 import { SystemLog } from "../../interfaces/entities.interface";
 
 function AdminDashboardPage() {
@@ -108,7 +107,7 @@ function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Threshold Alert Notifications */}
-      <ThresholdAlert logs={systemLogs} />
+  
 
       {/* Header */}
       <div className="mb-6">

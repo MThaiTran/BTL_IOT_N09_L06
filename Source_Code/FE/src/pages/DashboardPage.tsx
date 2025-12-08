@@ -1,18 +1,16 @@
 import { Navigate } from "react-router-dom";
-import { devicesAPI, userDevicesAPI, systemLogsAPI } from "../services/api";
+import { devicesAPI, userDevicesAPI } from "../services/api";
 import { Device } from "../interfaces/entities.interface";
 import { getCurrentUserRole, getCurrentUserId } from "../utils/roles";
 import TemperatureHumidityCard from "../components/dashboard/TemperatureHumidityCard";
 import DeviceControlCard from "../components/dashboard/DeviceControlCard";
 import SystemStatusCard from "../components/dashboard/SystemStatusCard";
 import ActivityChart from "../components/dashboard/ActivityChart";
-import ThresholdAlert from "../components/ThresholdAlert";
 import { Zap, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
-import { LiveMonitor } from "../components/dashboard/LiveMonitor";
+
 import { UserRole } from "../interfaces/enum";
 import MotionCard from "../components/dashboard/MotionCard";
-import { SystemLog } from "../interfaces/entities.interface";
 
 function DashboardPage() {
   // Redirect admin to admin dashboard
@@ -22,8 +20,6 @@ function DashboardPage() {
   }
  
   const [devices, setDevices] = useState<Device[]>([]);
-  const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
-  const [permittedDeviceIds, setPermittedDeviceIds] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +30,7 @@ function DashboardPage() {
       setIsLoading(true);
       setError(null);
       try {
+        // Lấy ID của user hiện tại từ localStorage
         const userId = getCurrentUserId();
         
         if (!userId) {
@@ -45,22 +42,16 @@ function DashboardPage() {
         // Lấy danh sách tất cả devices
         const res = await devicesAPI.getAll();
         
-        // Lấy danh sách thiết bị được cấp quyền cho user
-        const userDevicesRes = await userDevicesAPI.getOne(userId);
-        const userDeviceIds = userDevicesRes.data.map((ud: any) => ud.deviceId);
-       
-        // Lọc chỉ những device được cấp quyền
-        const filteredDevices = res.data.filter((device) =>
-          userDeviceIds.includes(device.id)
-        );
-
-        // Lấy system logs
-        const logsRes = await systemLogsAPI.getAll();
-        if (!cancelled) {
-          setSystemLogs(logsRes.data || []);
-          setPermittedDeviceIds(userDeviceIds);
-        }
-       
+         // Lấy danh sách thiết bị được cấp quyền cho user
+         const userDevicesRes = await userDevicesAPI.getOne(userId);
+         const userDeviceIds = userDevicesRes.data.map((ud: any) => ud.deviceId);
+        
+         // Lọc chỉ những device được cấp quyền
+         const filteredDevices = res.data.filter((device) =>
+           userDeviceIds.includes(device.id)
+         );
+         console.log("User devices:", filteredDevices);
+        
          if (!cancelled) {
            setDevices(filteredDevices);
          }
@@ -76,21 +67,8 @@ function DashboardPage() {
 
      fetchDevices();
 
-    // Refresh logs mỗi 10 giây
-    const logsInterval = setInterval(async () => {
-      try {
-        const logsRes = await systemLogsAPI.getAll();
-        if (!cancelled) {
-          setSystemLogs(logsRes.data || []);
-        }
-      } catch (err) {
-        console.error("Error fetching logs:", err);
-      }
-    }, 10000);
-
      return () => {
        cancelled = true;
-      clearInterval(logsInterval);
      };
    }, []);
 
@@ -119,7 +97,7 @@ function DashboardPage() {
      );
    };
 
-  // Phân loại thiết bị điều khiển - Đèn
+  // Phân loại thiết bị điều khiển - Đèn (chỉ từ device được cấp quyền)
    const lightDevices =
      (Array.isArray(devices) ? devices : []).filter(
        (d: Device) =>
@@ -128,10 +106,10 @@ function DashboardPage() {
           d.description?.toLowerCase().includes("đèn") ||
           d.location?.toLowerCase().includes("đèn") ||
           d.location?.toLowerCase().includes("light")) &&
-        !d.name?.toLowerCase().includes("cảm biến")
+        !d.name?.toLowerCase().includes("cảm biến") // loại bỏ cảm biến
      ) || [];
 
-  // Phân loại thiết bị điều khiển - Quạt
+  // Phân loại thiết bị điều khiển - Quạt (chỉ từ device được cấp quyền)
    const fanDevices =
      (Array.isArray(devices) ? devices : []).filter(
        (d: Device) =>
@@ -140,7 +118,7 @@ function DashboardPage() {
           d.description?.toLowerCase().includes("quạt") ||
           d.location?.toLowerCase().includes("quạt") ||
           d.location?.toLowerCase().includes("fan")) &&
-        !d.name?.toLowerCase().includes("cảm biến")
+        !d.name?.toLowerCase().includes("cảm biến") // loại bỏ cảm biến
      ) || [];
 
    if (isLoading) {
@@ -164,9 +142,6 @@ function DashboardPage() {
 
    return (
      <div className="space-y-6">
-+      {/* Threshold Alert Notifications */}
-+      <ThresholdAlert logs={systemLogs} permittedDeviceIds={permittedDeviceIds} />
-
        {/* Header */}
        <div className="mb-6">
          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -186,7 +161,11 @@ function DashboardPage() {
         </div>
       )}
 
-       {/* Phần Cảm biến */}
+       {/* --- PHẦN MỚI: Màn hình giám sát thời gian thực qua MQTT --- */}
+       {/* <LiveMonitor /> */}
+       {/* -------------------------------------------------------- */}
+
+      {/* Phần Cảm biến (Nhiệt độ, Độ ẩm, Chuyển động) */}
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
          {sensorDevices.length > 0 ? (
            sensorDevices.map((device: Device) =>
@@ -213,7 +192,7 @@ function DashboardPage() {
          </div>
        )}
 
-       {/* Device Controls */}
+       {/* Device Controls - Chỉ hiển thị nếu có thiết bị được cấp */}
        {(lightDevices.length > 0 || fanDevices.length > 0) && (
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
            {lightDevices.length > 0 && (

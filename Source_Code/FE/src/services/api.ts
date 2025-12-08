@@ -80,12 +80,13 @@ export const devicesAPI = {
   create: (data: CreateDeviceDto): Promise<{ data: Device }> =>
     api.post(import.meta.env.VITE_DEVICE_API_URL, data),
 
-  upload: (id: number, data: UpdateDeviceDto): Promise<{ data: Device }> =>
+  update: (id: number, data: UpdateDeviceDto): Promise<{ data: Device }> =>
     api.patch(`${import.meta.env.VITE_DEVICE_API_URL}/${id}`, data),
 
   delete: (id: number): Promise<void> =>
     api.delete(`${import.meta.env.VITE_DEVICE_API_URL}/${id}`),
 };
+
 //userDevicesAPI
 export const userDevicesAPI = {
   // Get all devices by user ID

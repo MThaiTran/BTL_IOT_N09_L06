@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { devicesAPI, userDevicesAPI } from '../services/api';
 import { Device } from '../interfaces/entities.interface';
 import { getCurrentUserId, getCurrentUserRole } from '../utils/roles';
 import { UserRole } from '../interfaces/enum';
-import { Mic, Square, Volume2, Info, AlertCircle, Check, MapPin } from 'lucide-react';
+import { Mic, Square, Volume2, Info, AlertCircle, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-type RecognitionStatus = 'idle' | 'listening';
+type RecognitionStatus = 'idle' | 'listening' | 'processing';
 
 declare global {
   interface Window {
@@ -18,13 +18,10 @@ declare global {
 
 const commandHints = [
   'Bật đèn phòng khách',
-  'Bật quạt phòng bếp',
-  'Bật đèn cầu thang',
-  'Tắt quạt phòng bếp',
+  'Tắt quạt phòng ngủ',
+  'Tăng tốc độ quạt',
+  'Giảm nhiệt độ xuống 25 độ',
 ];
-
-// Danh sách vị trí đèn có thể bật/tắt
-const lightLocations = ['phòng ngủ', 'cầu thang', 'phòng khách', 'phòng bếp', 'sân'];
 
 function VoiceControlPage() {
   const userId = getCurrentUserId();
@@ -37,7 +34,49 @@ function VoiceControlPage() {
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
   const recognitionRef = useRef<any>(null);
 
-  // Lấy danh sách thiết bị được cấp quyền (chỉ cho Guest & House Owner)
+  // ✅ Mutation gọi devicesAPI.update(deviceId, { state })
+  const updateDeviceMutation = useMutation({
+    mutationFn: async ({
+      deviceId,
+      state,
+      deviceName,
+      location,
+    }: {
+      deviceId: number;
+      state: boolean;
+      deviceName: string;
+      location: string;
+    }) => {
+      console.log(
+        `🚀 [DỰA VÀO COMMAND] Gọi devicesAPI.update(${deviceId}, { state: ${state} })`
+      );
+      // ✅ FIX: Truyền đầy đủ các field cần thiết
+      const response = await devicesAPI.update(deviceId, {
+        state,
+        name: deviceName,
+        location: location,
+        autoMode: false,
+        thresholdHigh: 0,
+        thresholdLow: 0,
+      });
+      console.log('response: ', response);
+      return { ...response, deviceName, location };
+    },
+    onSuccess: (data, variables) => {
+      const { deviceName, location, state } = variables;
+      const action = state ? 'bật' : 'tắt';
+      const message = `✅ Đã ${action} ${deviceName} (${location})`;
+      setLastAction(message);
+      toast.success(message);
+    },
+    onError: (error: any) => {
+      const errorMsg = error?.response?.data?.message || 'Lỗi';
+      setLastAction(`❌ ${errorMsg}`);
+      toast.error(errorMsg);
+    },
+  });
+
+  // Lấy danh sách thiết bị được cấp quyền
   const { data: userDevices } = useQuery({
     queryKey: ['userDevices', userId],
     queryFn: () => userDevicesAPI.getOne(userId!).then((res) => res.data),
@@ -55,7 +94,6 @@ function VoiceControlPage() {
   // Filter devices được cấp quyền
   useEffect(() => {
     if (userRole === UserRole.ADMIN) {
-      // Admin xem tất cả devices (không phải cảm biến)
       if (allDevices) {
         const controlDevices = allDevices.filter(
           (d) => !d.name?.toLowerCase().includes('cảm biến')
@@ -64,7 +102,6 @@ function VoiceControlPage() {
       }
       setIsLoadingPermissions(false);
     } else if (userDevices && allDevices) {
-      // Guest/House Owner: chỉ xem thiết bị được cấp (không phải cảm biến)
       const userDeviceIds = userDevices.map((ud: any) => ud.deviceId);
       const permitted = allDevices.filter(
         (d) =>
@@ -89,12 +126,16 @@ function VoiceControlPage() {
       recognition.continuous = false;
       recognition.interimResults = false;
 
-      recognition.onresult = (event: any) => {
+      // ✅ SỬA: Thêm async và gọi devicesAPI.update()
+      recognition.onresult = async (event: any) => {
         const text = event.results[0][0].transcript;
         setTranscript(text);
-        const action = parseCommand(text);
-        setLastAction(action);
-        toast.success(action);
+        setStatus('processing');
+
+        // ✅ Xử lý lệnh và gọi API
+        await executeCommand(text);
+
+        setStatus('idle');
       };
 
       recognition.onerror = () => {
@@ -110,13 +151,12 @@ function VoiceControlPage() {
     }
   }, []);
 
-  // Tìm thiết bị dựa trên tên và vị trí
+  // ✅ Tìm device dựa vào loại + vị trí
   const findDevice = (
     deviceType: 'light' | 'fan',
     location?: string
   ): Device | null => {
     if (deviceType === 'light') {
-      // Đèn: tìm theo vị trí
       if (location) {
         return (
           permittedDevices.find(
@@ -126,13 +166,11 @@ function VoiceControlPage() {
           ) || null
         );
       }
-      // Nếu không chỉ định vị trí, lấy đèn đầu tiên tìm được
       return (
         permittedDevices.find((d) => d.name?.toLowerCase().includes('đèn')) ||
         null
       );
     } else if (deviceType === 'fan') {
-      // Quạt: tìm theo vị trí
       if (location) {
         return (
           permittedDevices.find(
@@ -150,8 +188,9 @@ function VoiceControlPage() {
     return null;
   };
 
-  // Trích xuất vị trí từ lệnh giọng nói
+  // ✅ Trích xuất vị trí từ command
   const extractLocation = (text: string): string | null => {
+    const lightLocations = ['phòng ngủ', 'cầu thang', 'phòng khách', 'phòng bếp', 'sân'];
     const lower = text.toLowerCase();
     for (const location of lightLocations) {
       if (lower.includes(location)) {
@@ -161,82 +200,86 @@ function VoiceControlPage() {
     return null;
   };
 
-  const parseCommand = (text: string): string => {
+  // ✅ LỰA CHỌN ĐÚNG LUỒNG:
+  // command text → tìm device (by name + location) → gọi devicesAPI.update(id, {state})
+  const executeCommand = async (text: string): Promise<void> => {
     const lower = text.toLowerCase();
     const location = extractLocation(text);
 
-    // Xử lý lệnh bật đèn
+    // Lệnh: BẬT ĐÈN
     if (lower.includes('bật') && lower.includes('đèn')) {
-      const lightDevice = findDevice('light', location || undefined);
-      if (!lightDevice) {
-        return location
-          ? `Không tìm thấy đèn ở ${location} hoặc bạn không có quyền điều khiển`
-          : 'Bạn không có quyền điều khiển đèn nào';
+      const device = findDevice('light', location || undefined);
+      if (!device) {
+        setLastAction('❌ Không tìm thấy đèn');
+        toast.error('Không tìm thấy đèn');
+        return;
       }
-      return `Đã bật đèn ${lightDevice.location} thành công`;
+      // ✅ GỌI API TẠI ĐÂY
+      await updateDeviceMutation.mutateAsync({
+        deviceId: device.id,
+        state: true,
+        deviceName: device.name,
+        location: device.location || '',
+      });
+      return;
     }
 
-    // Xử lý lệnh tắt đèn
+    // Lệnh: TẮT ĐÈN
     if (lower.includes('tắt') && lower.includes('đèn')) {
-      const lightDevice = findDevice('light', location || undefined);
-      if (!lightDevice) {
-        return location
-          ? `Không tìm thấy đèn ở ${location} hoặc bạn không có quyền điều khiển`
-          : 'Bạn không có quyền điều khiển đèn nào';
+      const device = findDevice('light', location || undefined);
+      if (!device) {
+        setLastAction('❌ Không tìm thấy đèn');
+        toast.error('Không tìm thấy đèn');
+        return;
       }
-      return `Đã tắt đèn ${lightDevice.location} thành công`;
+      // ✅ GỌI API TẠI ĐÂY
+      await updateDeviceMutation.mutateAsync({
+        deviceId: device.id,
+        state: false,
+        deviceName: device.name,
+        location: device.location || '',
+      });
+      return;
     }
 
-    // Xử lý lệnh bật quạt
+    // Lệnh: BẬT QUẠT
     if (lower.includes('bật') && lower.includes('quạt')) {
-      const fanDevice = findDevice('fan', location || undefined);
-      if (!fanDevice) {
-        return location
-          ? `Không tìm thấy quạt ở ${location} hoặc bạn không có quyền điều khiển`
-          : 'Bạn không có quyền điều khiển quạt nào';
+      const device = findDevice('fan', location || undefined);
+      if (!device) {
+        setLastAction('❌ Không tìm thấy quạt');
+        toast.error('Không tìm thấy quạt');
+        return;
       }
-      return `Đã bật quạt ${fanDevice.location} thành công`;
+      // ✅ GỌI API TẠI ĐÂY
+      await updateDeviceMutation.mutateAsync({
+        deviceId: device.id,
+        state: true,
+        deviceName: device.name,
+        location: device.location || '',
+      });
+      return;
     }
 
-    // Xử lý lệnh tắt quạt
+    // Lệnh: TẮT QUẠT
     if (lower.includes('tắt') && lower.includes('quạt')) {
-      const fanDevice = findDevice('fan', location || undefined);
-      if (!fanDevice) {
-        return location
-          ? `Không tìm thấy quạt ở ${location} hoặc bạn không có quyền điều khiển`
-          : 'Bạn không có quyền điều khiển quạt nào';
+      const device = findDevice('fan', location || undefined);
+      if (!device) {
+        setLastAction('❌ Không tìm thấy quạt');
+        toast.error('Không tìm thấy quạt');
+        return;
       }
-      return `Đã tắt quạt ${fanDevice.location} thành công`;
+      // ✅ GỌI API TẠI ĐÂY
+      await updateDeviceMutation.mutateAsync({
+        deviceId: device.id,
+        state: false,
+        deviceName: device.name,
+        location: device.location || '',
+      });
+      return;
     }
 
-    // Xử lý lệnh tăng tốc độ quạt
-    if (lower.includes('tăng') && (lower.includes('quạt') || lower.includes('tốc'))) {
-      const fanDevice = findDevice('fan', location || undefined);
-      if (!fanDevice) {
-        return 'Không tìm thấy quạt hoặc bạn không có quyền điều khiển';
-      }
-      return `Đã tăng tốc độ quạt ${fanDevice.location}`;
-    }
-
-    // Xử lý lệnh giảm tốc độ quạt
-    if (lower.includes('giảm') && (lower.includes('quạt') || lower.includes('tốc'))) {
-      const fanDevice = findDevice('fan', location || undefined);
-      if (!fanDevice) {
-        return 'Không tìm thấy quạt hoặc bạn không có quyền điều khiển';
-      }
-      return `Đã giảm tốc độ quạt ${fanDevice.location}`;
-    }
-
-    // Xử lý lệnh điều chỉnh nhiệt độ
-    if (lower.includes('giảm') && (lower.includes('nhiệt') || lower.includes('độ'))) {
-      return 'Đã giảm nhiệt độ về mức an toàn';
-    }
-
-    if (lower.includes('tăng') && (lower.includes('nhiệt') || lower.includes('độ'))) {
-      return 'Đã tăng nhiệt độ theo yêu cầu';
-    }
-
-    return 'Không nhận diện được lệnh, vui lòng thử lại';
+    setLastAction('❌ Không nhận diện được lệnh');
+    toast.error('Không nhận diện được lệnh');
   };
 
   const handleStart = () => {
@@ -283,7 +326,6 @@ function VoiceControlPage() {
         </div>
       )}
 
-      {/* Thông báo cho Guest không có quyền */}
       {(userRole === UserRole.GUEST || userRole === UserRole.HOUSE_OWNER) &&
         permittedDevices.length === 0 && (
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -307,14 +349,14 @@ function VoiceControlPage() {
             <div>
               <p className="text-sm text-gray-500">Trạng thái</p>
               <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                {status === 'listening' ? 'Đang lắng nghe...' : 'Sẵn sàng'}
+                {status === 'listening' ? 'Đang lắng nghe...' : status === 'processing' ? 'Đang xử lý...' : 'Sẵn sàng'}
               </p>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={handleStart}
-                disabled={!isSupported || status === 'listening' || permittedDevices.length === 0}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                disabled={!isSupported || status !== 'idle' || permittedDevices.length === 0}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Mic size={18} />
                 Bắt đầu
@@ -322,7 +364,7 @@ function VoiceControlPage() {
               <button
                 onClick={handleStop}
                 disabled={status === 'idle'}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Square size={18} />
                 Dừng
@@ -359,29 +401,26 @@ function VoiceControlPage() {
               ? 'Thử các câu lệnh mẫu sau để điều khiển thiết bị:'
               : 'Bạn có thể điều khiển các thiết bị sau:'}
           </p>
-          <ul className="space-y-3 max-h-[400px] overflow-y-auto">
+          <ul className="space-y-3">
             {userRole === UserRole.ADMIN ? (
               commandHints.map((hint) => (
                 <li
                   key={hint}
                   className="px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-sm"
                 >
-                  '"{hint}"'
+                  "{hint}"
                 </li>
               ))
             ) : permittedDevices.length > 0 ? (
               permittedDevices.map((device) => (
                 <li
                   key={device.id}
-                  className="px-4 py-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-sm"
+                  className="px-4 py-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-sm flex items-center gap-2"
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <Check size={16} />
-                    <p className="font-semibold">{device.name}</p>
-                  </div>
-                  <div className="flex items-center gap-1 ml-6 text-xs opacity-75">
-                    <MapPin size={12} />
-                    {device.location}
+                  <Check size={16} />
+                  <div>
+                    <p className="font-semibold">[ID={device.id}] {device.name}</p>
+                    <p className="text-xs opacity-75">{device.location}</p>
                   </div>
                 </li>
               ))
@@ -398,4 +437,7 @@ function VoiceControlPage() {
 }
 
 export default VoiceControlPage;
+
+
+
 
