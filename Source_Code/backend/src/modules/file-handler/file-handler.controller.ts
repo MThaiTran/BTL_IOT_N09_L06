@@ -27,12 +27,18 @@ export class FileHandlerController {
   uploadFile(
     @UploadedFile() file: Express.Multer.File,
     @Body('fileType') fileType: 'audio' | 'bin' | 'other',
+    @Body('version') version: number,
     @Body('deviceId') deviceId?: number,
   ) {
     console.log('Uploading file:', file?.originalname);
     console.log('File type:', fileType);
     console.log('Device ID:', deviceId);
-    return this.fileHandlerService.handleFile(file, fileType, deviceId);
+    return this.fileHandlerService.handleFile(
+      file,
+      fileType,
+      version,
+      deviceId,
+    );
   }
 
   @Get('download/:fileType/:fileName')
@@ -52,6 +58,14 @@ export class FileHandlerController {
     fileStream.on('error', (err) => {
       res.status(500).send('Error downloading file');
     });
+  }
+
+  @Get('file-info/:fileType/:fileName')
+  getFileInfo(
+    @Param('fileType') fileType: string,
+    @Param('fileName') fileName: string,
+  ) {
+    return this.fileHandlerService.getFile(fileType, fileName);
   }
 
   @Get('list')

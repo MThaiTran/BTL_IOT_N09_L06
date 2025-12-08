@@ -24,6 +24,7 @@ export class FileHandlerService {
   handleFile(
     file: Express.Multer.File,
     fileType: 'audio' | 'bin' | 'other',
+    version: number,
     deviceId?: number,
   ) {
     if (!file) {
@@ -31,7 +32,7 @@ export class FileHandlerService {
     }
 
     // Save file to disk
-    const savedFile = this.saveFile(file, fileType, deviceId);
+    const savedFile = this.saveFile(file, fileType, version, deviceId);
 
     if (fileType === 'audio') {
       return {
@@ -51,10 +52,11 @@ export class FileHandlerService {
   private saveFile(
     file: Express.Multer.File,
     fileType: 'audio' | 'bin' | 'other',
+    version: number,
     deviceId?: number,
   ) {
     const fileExt = path.extname(file.originalname);
-    const fileName = `${fileType}_${deviceId || 'general'}_${uuidv4()}${fileExt}`;
+    const fileName = `${version}_${fileType || 'general'}_${uuidv4()}${fileExt}`;
     const fileSubDir = path.join(this.uploadDir, fileType);
 
     // Create type-specific subdirectory if not exists
@@ -120,6 +122,7 @@ export class FileHandlerService {
             fileName: file,
             fileType: dir,
             fileSize: fileStat.size,
+            version: file.split('_')[0],
             uploadedAt: fileStat.mtime.toISOString(),
             downloadUrl: `/file-handler/download/${dir}/${file}`,
           });

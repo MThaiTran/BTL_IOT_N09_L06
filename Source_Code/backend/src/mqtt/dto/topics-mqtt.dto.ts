@@ -15,7 +15,7 @@ export interface DeviceDataDto {
   id: number;
   state: boolean;
   autoMode: boolean;
-  status: Status;
+  status?: Status;
 }
 
 export interface MqttWarningsTopicDto {
