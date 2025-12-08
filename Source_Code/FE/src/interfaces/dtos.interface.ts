@@ -67,6 +67,15 @@ export interface UpdateUserDto {
   status?: string;
 }
 
+export interface FileDto {
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  uploadedAt: Date;
+  downloadUrl: string;
+  thirdPartyUrl?: string;
+  version?: number;
+}
 // ========== MQTT DTOs ==========
 
 export interface StatusTopicDto {
