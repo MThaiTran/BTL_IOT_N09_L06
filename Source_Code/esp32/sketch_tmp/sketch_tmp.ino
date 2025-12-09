@@ -10,7 +10,7 @@
 
 
 
-const int CODE_VERSION = 1;
+const int CODE_VERSION = 2;
 
 
 
@@ -38,11 +38,11 @@ const int NUM_DEVICES = 6;
 
 Device myDevices[NUM_DEVICES] = {
   // ID, Pin, State, AutoMode, T_High, H_High, Mot_On, T_Low,  H_Low,  Mot_Off
-  { 8, 16, false, false, NAN, NAN, false, NAN, NAN, false },
-  { 9, 17, false, false, NAN, NAN, false, NAN, NAN, false },
-  { 10, 18, false, false, NAN, NAN, false, NAN, NAN, false },
-  { 11, 19, false, false, NAN, NAN, false, NAN, NAN, false },
-  { 12, 21, false, false, NAN, NAN, false, NAN, NAN, false },
+  { 8, 16, true, false, NAN, NAN, false, NAN, NAN, false },
+  { 9, 17, true, false, NAN, NAN, false, NAN, NAN, false },
+  { 10, 18, true, false, NAN, NAN, false, NAN, NAN, false },
+  { 11, 19, true, false, NAN, NAN, false, NAN, NAN, false },
+  { 12, 21, true, false, NAN, NAN, false, NAN, NAN, false },
   { 13, 23, false, false, NAN, NAN, false, NAN, NAN, false }
 };
 
@@ -55,13 +55,13 @@ DHT dht(DHT_PIN, DHT_TYPE);
 
 const long interval = 2000;
 const long logInterval = 20000;
-const long wifiCheckInterval = 20000; 
+const long wifiCheckInterval = 20000;
 const char* MQTT_WILL = "{\"availability\": false}";
 const char* MQTT_WILL_CONNECTED = "{\"availability\": true}";
 
 unsigned long lastLogTime = 0;
 unsigned long lastStatusTime = 0;
-unsigned long lastWifiCheck = 0; 
+unsigned long lastWifiCheck = 0;
 
 // HiveMQ Cloud Let's Encrypt CA certificate
 static const char* root_ca PROGMEM = R"EOF(
@@ -182,6 +182,25 @@ void setup() {
   Serial.print(CODE_VERSION);
   Serial.print("-----");
   Serial.println();
+
+  Serial.println("Applying initial device states...");
+
+  for (int i = 0; i < NUM_DEVICES; i++) {
+    // 1. Configure the GPIO as Output
+    pinMode(myDevices[i].pin, OUTPUT);
+
+    // 2. Write the default state immediately
+    // If your array says 'true', this turns the pin HIGH
+    // If your array says 'false', this turns the pin LOW
+    digitalWrite(myDevices[i].pin, myDevices[i].state ? HIGH : LOW);
+
+    Serial.printf("Device %d (Pin %d) initialized to %s\n",
+                  myDevices[i].id,
+                  myDevices[i].pin,
+                  myDevices[i].state ? "ON" : "OFF");
+  }
+
+  Serial.println("System Initializing Complete.");
 }
 
 
@@ -227,13 +246,13 @@ void publishSystemData(const char* topic) {
     d["status"] = "active";
   }
 
-    JsonObject pir = devices.createNestedObject();
-    pir["id"] = 15;
-    pir["status"] = "active";
+  JsonObject pir = devices.createNestedObject();
+  pir["id"] = 15;
+  pir["status"] = "active";
 
-    JsonObject dht = devices.createNestedObject();
-    dht["id"] = 14;
-    dht["status"] = "active";
+  JsonObject dht = devices.createNestedObject();
+  dht["id"] = 14;
+  dht["status"] = "active";
 
   String output;
   serializeJson(doc, output);
