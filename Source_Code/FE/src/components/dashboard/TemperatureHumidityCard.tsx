@@ -3,13 +3,20 @@ import { format } from "date-fns";
 // 1. Import Hook để lấy dữ liệu MQTT
 import { useMqttData } from "../../services/useMqttData";
 import { TemperatureHumidityCardProps } from "../../interfaces/ui-props.interface";
+import { Status } from "../../interfaces/enum";
+
+const TEMPERATUREHUMIDITY_DEVICE_ID = 14;
 
 function TemperatureHumidityCard({ device }: TemperatureHumidityCardProps) {
   // 2. Gọi Hook để lấy dữ liệu thực tế (Temp, Hum, Lux) và trạng thái kết nối
   const { statusData, status } = useMqttData();
 
   // Kiểm tra trạng thái Online dựa vào kết nối MQTT
-  const isOnline = status === "Connected";
+  // const isOnline = status === "Connected";
+  const isOnline =
+    statusData?.devices.filter(
+      (d) => d.id === (device!.id ?? TEMPERATUREHUMIDITY_DEVICE_ID)
+    )[0]?.status === Status.ACTIVE;
 
   const getTempColor = (temp: number) => {
     if (temp < 20) return "text-blue-500";
@@ -41,7 +48,7 @@ function TemperatureHumidityCard({ device }: TemperatureHumidityCardProps) {
           {isOnline ? (
             <>
               <Wifi size={16} className="text-green-500" />
-              <span className="text-xs text-green-500">Live (MQTT)</span>
+              <span className="text-xs text-green-500">Live</span>
             </>
           ) : (
             <>

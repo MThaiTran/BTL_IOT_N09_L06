@@ -102,7 +102,7 @@ function DeviceControlCard({
     if (!tempLiveDevice) return null;
     tempDevice.autoMode = tempLiveDevice.autoMode ?? false;
     tempDevice.state = tempLiveDevice.state ?? false;
-    tempDevice.status = tempLiveDevice.status ? Status.ACTIVE : Status.INACTIVE;
+    tempDevice.status = tempLiveDevice.status ?? Status.INACTIVE;
     return tempDevice;
   };
 
@@ -164,7 +164,12 @@ function DeviceControlCard({
                   {getLiveDevice(device)?.status === Status.ACTIVE ? (
                     <LucideWifi className="text-green-500" />
                   ) : (
-                    <LucideWifiOff className="text-red-500" />
+                    <>
+                      <LucideWifiOff className="text-gray-500" />
+                      <span className="text-xs text-gray-400">
+                        Connecting...
+                      </span>
+                    </>
                   )}
                 </div>
                 <div className=" text-gray-500">{label}</div>
@@ -182,14 +187,24 @@ function DeviceControlCard({
 
                 <button
                   onClick={() => toggleDevice(device)}
-                  disabled={autoMode[device.id] || loadingDevices[device.id]}
+                  disabled={
+                    getLiveDevice(device)?.autoMode || /// disable if in auto mode autoMode[device.id] || << BASE
+                    getLiveDevice(device)?.status === Status.ACTIVE
+                      ? false
+                      : true
+                  }
                   className={`px-7 py-2 rounded ${
                     on
                       ? "bg-green-500 text-white"
                       : "bg-gray-200 dark:bg-gray-700"
                   }`}
                 >
-                  {loadingDevices[device.id] ? "..." : on ? "BẬT" : "TẮT"}
+                  {/* {getLiveDevice(device) ? "Ngoại tuyến" : on ? "BẬT" : "TẮT"} */}
+                  {getLiveDevice(device)?.status === Status.ACTIVE
+                    ? on
+                      ? "BẬT"
+                      : "TẮT"
+                    : "Ngoại tuyến"}
                 </button>
               </div>
             </div>

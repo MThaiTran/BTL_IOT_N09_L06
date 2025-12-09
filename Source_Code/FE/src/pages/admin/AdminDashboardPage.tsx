@@ -108,7 +108,7 @@ function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Threshold Alert Notifications */}
-      <ThresholdAlert logs={systemLogs} />
+      {/* <ThresholdAlert logs={systemLogs} /> */}
 
       {/* Header */}
       <div className="mb-6">

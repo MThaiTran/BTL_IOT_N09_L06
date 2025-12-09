@@ -3,14 +3,19 @@ import { format } from "date-fns";
 // 1. Import Hook để lấy dữ liệu MQTT
 import { useMqttData } from "../../services/useMqttData";
 import { TemperatureHumidityCardProps } from "../../interfaces/ui-props.interface";
+import { Status } from "../../interfaces/enum";
 
+const MOTION_DEVICE_ID = 14;
 function MotionCard({ device }: TemperatureHumidityCardProps) {
   // 2. Gọi Hook để lấy dữ liệu thực tế (Temp, Hum, Lux) và trạng thái kết nối
   const { statusData, status } = useMqttData();
 
   // Kiểm tra trạng thái Online dựa vào kết nối MQTT
-  const isOnline = status === "Connected";
-
+  // const isOnline = status === "Connected";
+  const isOnline =
+    statusData?.devices.filter(
+      (d) => d.id === (device!.id ?? MOTION_DEVICE_ID)
+    )[0]?.status === Status.ACTIVE;
   // Hàm màu cho ánh sáng
   const getLuxColor = (lux: number) => {
     if (lux < 300) return "text-gray-500"; // Tối
